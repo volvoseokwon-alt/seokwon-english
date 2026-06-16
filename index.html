@@ -529,6 +529,16 @@
                         <button class="add-btn" style="background:#c026d3;" onclick="mergeCategory()">병합 / 이름 바꾸기</button>
                         <span style="font-size:0.74rem;color:#94a3b8;">선택한 카테고리의 모든 문장이 대상 카테고리로 옮겨지고, 원래 카테고리는 사라집니다.</span>
                     </div>
+                    <div class="setting-form" style="margin-bottom:10px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px;">
+                        <span style="font-size:0.82rem;font-weight:bold;color:#c2410c;">🎧 듣기 옵션</span>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;color:#9a3412;cursor:pointer;">
+                            <input type="checkbox" id="wake-lock-enabled" style="width:18px;height:18px;" onchange="saveListenOptions()">📱 화면 꺼짐 방지 (듣기 중 화면 켜둠)
+                        </label>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;color:#9a3412;cursor:pointer;">
+                            <input type="checkbox" id="bg-listen-enabled" style="width:18px;height:18px;" onchange="saveListenOptions()">🔒 화면 꺼져도 듣기 계속 (백그라운드 재생)
+                        </label>
+                        <span style="font-size:0.74rem;color:#94a3b8;">백그라운드 재생은 안드로이드에서 가장 잘 되고, 미리 저장된 음성일수록 안정적이에요. 잠금화면에 재생 컨트롤이 뜹니다. (iOS는 제한될 수 있어요)</span>
+                    </div>
                     <div class="setting-form" style="margin-bottom:4px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px;">
                         <span style="font-size:0.82rem;font-weight:bold;color:#15803d;">💾 데이터 백업 / 복원</span>
                         <button class="add-btn" style="background:#16a34a;" onclick="exportData()">💾 전체 문장 JSON 내보내기</button>
@@ -1771,6 +1781,10 @@ document.addEventListener("DOMContentLoaded", function() {
     onProviderChange();
     const ttsCb = document.getElementById('ai-tts-enabled');
     if (ttsCb) ttsCb.checked = aiTTSEnabled();
+    const wlCb = document.getElementById('wake-lock-enabled');
+    if (wlCb) wlCb.checked = wakeLockEnabled();
+    const bgCb = document.getElementById('bg-listen-enabled');
+    if (bgCb) bgCb.checked = bgListenEnabled();
     if (gks && (!needsKey() || getAIKey())) {
         const pv = getAIProvider();
         const pname = pv === 'openai' ? 'OpenAI' : (pv === 'puter' ? 'Puter(무료)' : (pv === 'pollinations' ? 'Pollinations(무료)' : 'Gemini'));
@@ -2959,6 +2973,56 @@ function listenInCats(i) {
     return listenCategories.length === 0 || listenCategories.includes(getCategory(i));
 }
 
+// ── 듣기 옵션: 화면 꺼짐 방지 + 백그라운드 재생 ──
+function wakeLockEnabled() { try { return localStorage.getItem('wake_lock_on') === '1'; } catch (e) { return false; } }
+function bgListenEnabled() { try { return localStorage.getItem('bg_listen_on') === '1'; } catch (e) { return false; } }
+window.saveListenOptions = function() {
+    try {
+        localStorage.setItem('wake_lock_on', document.getElementById('wake-lock-enabled').checked ? '1' : '0');
+        localStorage.setItem('bg_listen_on', document.getElementById('bg-listen-enabled').checked ? '1' : '0');
+    } catch (e) {}
+    if (listenActive) { if (wakeLockEnabled() || bgListenEnabled()) acquireWakeLock(); else releaseWakeLock(); }
+};
+
+let wakeLockObj = null;
+async function acquireWakeLock() {
+    if (!(wakeLockEnabled() || bgListenEnabled())) return;
+    try {
+        if ('wakeLock' in navigator) {
+            wakeLockObj = await navigator.wakeLock.request('screen');
+            wakeLockObj.addEventListener('release', () => { wakeLockObj = null; });
+        }
+    } catch (e) { /* 사용자가 막거나 미지원 */ }
+}
+async function releaseWakeLock() {
+    try { if (wakeLockObj) { await wakeLockObj.release(); wakeLockObj = null; } } catch (e) {}
+}
+// 화면 다시 켜지면 재요청 (wakeLock은 백그라운드 시 해제됨)
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && listenActive && (wakeLockEnabled() || bgListenEnabled())) acquireWakeLock();
+});
+
+// 잠금화면 미디어 컨트롤 + 백그라운드 오디오 세션 유지
+function setupMediaSession() {
+    if (!('mediaSession' in navigator)) return;
+    try {
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title: '영어 듣기 연습', artist: '나의 영어 학습', album: '듣기 모드'
+        });
+        navigator.mediaSession.setActionHandler('pause', () => { pauseListenMode(); });
+        navigator.mediaSession.setActionHandler('play', () => { if (listenPaused) resumeListenMode(); });
+        navigator.mediaSession.setActionHandler('stop', () => { stopListenMode(); });
+        navigator.mediaSession.setActionHandler('nexttrack', () => { if (listenActive) { listenIdx = Math.min(listenIdx + 1, listenQueue.length - 1); stopAITTS(); listenNext(); } });
+        navigator.mediaSession.setActionHandler('previoustrack', () => { if (listenActive) { listenIdx = Math.max(listenIdx - 1, 0); stopAITTS(); listenNext(); } });
+        navigator.mediaSession.playbackState = 'playing';
+    } catch (e) {}
+}
+function onListenStart() { acquireWakeLock(); setupMediaSession(); }
+function onListenStop() {
+    releaseWakeLock();
+    try { if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'none'; } catch (e) {}
+}
+
 function startListenAll() {
     // 학습 중 문장만 (마스터 제외) + 카테고리 필터
     const normal = db.filter(i => (i.count || 0) < 20 && listenInCats(i));
@@ -2967,6 +3031,7 @@ function startListenAll() {
     listenIdx    = 0;
     listenActive = true;
     listenRepeat = true;
+    onListenStart();
     updateListenBar();
     listenNext();
 }
@@ -2981,6 +3046,7 @@ function startListenAllFull() {
     listenActive = true;
     listenPaused = false;
     listenRepeat = true;
+    onListenStart();
     updateListenBar();
     listenNext();
 }
@@ -2993,6 +3059,7 @@ function listenOne(id) {
     listenActive = true;
     listenPaused = false;
     listenRepeat = false;
+    onListenStart();
     updateListenBar();
     listenNext();
 }
@@ -3004,6 +3071,7 @@ function stopListenMode() {
     listenIdx    = 0;
     stopAITTS();
     window.speechSynthesis.cancel();
+    onListenStop();
     updateListenBar();
 }
 
@@ -3013,6 +3081,7 @@ function pauseListenMode() {
     listenPaused = true;
     stopAITTS();
     window.speechSynthesis.cancel();
+    onListenStop();
     updateListenBar();
 }
 
@@ -3020,6 +3089,7 @@ function resumeListenMode() {
     // 재개: 현재 위치부터
     listenPaused = false;
     listenActive = true;
+    onListenStart();
     updateListenBar();
     listenNext();
 }
