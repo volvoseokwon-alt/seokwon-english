@@ -1757,7 +1757,7 @@ function processSpeechInput(spokenText) {
             const idx = emptyIndices[k];
             const cleanTarget = normalizeText(targetWords[idx]);
             if (cleanTarget.includes(' ')) continue; // 멀티워드는 위에서 이미 처리
-            const isMatch = token === cleanTarget || getSimilarity(token, cleanTarget) >= 0.82;
+            const isMatch = token === cleanTarget || getSimilarity(token, cleanTarget) >= 0.6;
             if (isMatch) {
                 builtWords[idx] = targetWords[idx];
                 emptyIndices.splice(k, 1);
