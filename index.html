@@ -76,6 +76,11 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .word-piece:active { transform: scale(0.92); background-color: var(--primary-active); }
+
+        .word-slot-empty {
+            background: #f8fafc; border: 2px dashed #cbd5e1; color: #cbd5e1; padding: 12px 22px; border-radius: 50px; font-size: 1rem; font-weight: bold;
+            box-shadow: none; min-width: 38px; text-align: center;
+        }
         
         .action-area { display: flex; justify-content: center; gap: 8px; margin-bottom: 0px; flex-wrap: wrap; }
         .action-area button { flex: 1; min-width: 95px; padding: 12px 5px; border: none; border-radius: 8px; font-weight: bold; font-size: 0.9rem; cursor: pointer; transition: transform 0.08s ease, background-color 0.08s ease; color: white; }
@@ -341,6 +346,7 @@
         .cp-apply { width: 100%; background: var(--primary-color); color: #fff; border: none; padding: 13px; border-radius: 12px; font-weight: bold; font-size: 1rem; cursor: pointer; margin-bottom: 8px; }
         .cp-apply:active { background: var(--primary-active); }
         .cat-remaining { font-size: 0.78rem; font-weight: bold; color: #6366f1; white-space: nowrap; flex-shrink: 0; }
+        .correct-count-badge { font-size: 0.78rem; font-weight: bold; color: #16a34a; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 3px 8px; border-radius: 8px; white-space: nowrap; flex-shrink: 0; margin-left: 6px; }
         .cat-btn { background: #f5f3ff; color: #6d28d9; border: 1px solid #ddd6fe; font-size: 0.75rem; font-weight: bold; padding: 5px 8px; border-radius: 6px; cursor: pointer; white-space: nowrap; max-width: 110px; overflow: hidden; text-overflow: ellipsis; }
         .cat-btn:active { background: #ddd6fe; }
         /* 프리셋 카테고리 칩 */
@@ -402,6 +408,7 @@
                 <span class="cat-ico">🏷️</span>
                 <button type="button" class="cat-trigger" id="study-cat-trigger" onclick="openStudyFilter()">📚 전체</button>
                 <span class="cat-remaining" id="cat-remaining"></span>
+                <span class="correct-count-badge" id="correct-count-badge">✅ 0회 맞힘</span>
             </div>
             <div class="quiz-box" id="quiz-box-container">
                 <div id="kor-meaning">서버에서 문장을 동기화하는 중...</div>
@@ -628,7 +635,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import { getFirestore, collection, doc, setDoc, getDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { getFirestore, collection, doc, setDoc, getDoc, deleteDoc, onSnapshot, increment } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC-P5AutqT8yArZrY-dccSw9N51NPjXxco",
@@ -1724,23 +1731,46 @@ function normalizeText(text) {
 
 function processSpeechInput(spokenText) {
     let cleanSpoken = normalizeText(spokenText);
-    let currentTargetWord = targetWords[builtWords.length];
-    if (!currentTargetWord) return;
+    let spokenTokens = cleanSpoken.split(/\s+/).filter(Boolean);
+    if (spokenTokens.length === 0) return;
 
-    let cleanTarget = normalizeText(currentTargetWord);
-    let isMatch = cleanSpoken.includes(cleanTarget);
-    
-    if (!isMatch) {
-        let spokenTokens = cleanSpoken.split(/\s+/);
-        for (let token of spokenTokens) {
-            if (getSimilarity(token, cleanTarget) >= 0.82) { isMatch = true; break; }
+    // 아직 채워지지 않은 슬롯 인덱스만 후보로 검사 (순서 무관 — 퍼즐 맞추기 방식)
+    let emptyIndices = builtWords.reduce((arr, w, i) => { if (w === null) arr.push(i); return arr; }, []);
+    if (emptyIndices.length === 0) return;
+
+    let anyMatched = false;
+
+    // 1) 멀티워드 청크(예: "to the") 먼저 처리 — 발화 전체에 그 구절이 포함되는지로 판단
+    for (let k = 0; k < emptyIndices.length; k++) {
+        const idx = emptyIndices[k];
+        const cleanTarget = normalizeText(targetWords[idx]);
+        if (cleanTarget.includes(' ') && cleanSpoken.includes(cleanTarget)) {
+            builtWords[idx] = targetWords[idx];
+            emptyIndices.splice(k, 1); k--;
+            anyMatched = true;
         }
     }
 
-    if (isMatch) {
-        builtWords.push(currentTargetWord); renderBuilder(); renderPool();
+    // 2) 단일 단어는 발화 토큰 하나당 빈칸 하나만 채우도록 소비(중복 단어가 여러 빈칸에 있어도 과매칭 방지)
+    for (const token of spokenTokens) {
+        for (let k = 0; k < emptyIndices.length; k++) {
+            const idx = emptyIndices[k];
+            const cleanTarget = normalizeText(targetWords[idx]);
+            if (cleanTarget.includes(' ')) continue; // 멀티워드는 위에서 이미 처리
+            const isMatch = token === cleanTarget || getSimilarity(token, cleanTarget) >= 0.82;
+            if (isMatch) {
+                builtWords[idx] = targetWords[idx];
+                emptyIndices.splice(k, 1);
+                anyMatched = true;
+                break;
+            }
+        }
+    }
+
+    if (anyMatched) {
+        renderBuilder(); renderPool();
         document.getElementById('msg-box').innerHTML = "";
-        if (builtWords.length === targetWords.length) { handleSuccess(); }
+        if (builtWords.every(w => w !== null)) { handleSuccess(); }
     }
 }
 
@@ -1976,6 +2006,8 @@ function initGame() {
     if (currentIdx === -1) { initGame(); return; } // DB 동기화 타이밍 어긋날 때 재시도
 
     document.getElementById('stat-count').innerText = db[currentIdx].count || 0;
+    const ccBadge = document.getElementById('correct-count-badge');
+    if (ccBadge) ccBadge.innerText = `✅ ${db[currentIdx].count || 0}회 맞힘`;
     document.getElementById('kor-meaning').innerText = "👉 " + db[currentIdx].kor;
 
     const remEl = document.getElementById('cat-remaining');
@@ -1988,6 +2020,7 @@ function initGame() {
     
     targetWords = aiSegmenter(db[currentIdx].eng);
     poolWords = [...targetWords].sort(() => Math.random() - 0.5);
+    builtWords = new Array(targetWords.length).fill(null);
 
     renderVocabNotes(db[currentIdx].eng);
 
@@ -1997,17 +2030,25 @@ function initGame() {
 
 function renderBuilder() {
     const box = document.getElementById('builder-box'); box.innerHTML = "";
+    const filledIndices = builtWords.reduce((arr, w, i) => { if (w !== null) arr.push(i); return arr; }, []);
+    const lastFilledIdx = filledIndices.length ? filledIndices[filledIndices.length - 1] : -1;
     builtWords.forEach((w, idx) => {
-        let btn = document.createElement('button'); btn.className = "word-piece"; btn.innerText = w;
-        if (!isLockingNext && idx === builtWords.length - 1) { btn.addEventListener('click', removeLastWord); }
-        box.appendChild(btn);
+        if (w === null) {
+            let blank = document.createElement('span'); blank.className = "word-slot-empty"; blank.innerText = "?";
+            box.appendChild(blank);
+        } else {
+            let btn = document.createElement('button'); btn.className = "word-piece"; btn.innerText = w;
+            // 클릭 모드에서 채운 마지막 단어만 취소(되돌리기) 가능 — 말하기 모드로 채운 중간 단어는 취소 버튼 비활성
+            if (!isLockingNext && idx === lastFilledIdx) { btn.addEventListener('click', () => removeWordAt(idx)); }
+            box.appendChild(btn);
+        }
     });
 }
 
 function renderPool() {
     const pool = document.getElementById('word-pool'); pool.innerHTML = "";
     let usedCounts = {};
-    builtWords.forEach(w => { usedCounts[w] = (usedCounts[w] || 0) + 1; });
+    builtWords.forEach(w => { if (w !== null) usedCounts[w] = (usedCounts[w] || 0) + 1; });
     poolWords.forEach(w => {
         let btn = document.createElement('button'); btn.className = "pool-item"; btn.innerText = w;
         if (usedCounts[w] && usedCounts[w] > 0) { btn.classList.add('selected'); usedCounts[w]--; } 
@@ -2019,9 +2060,11 @@ function renderPool() {
 async function selectWord(word) {
     if (isLockingNext) return; 
     playClickSound(); // 🎵 단어를 선택했을 때 소리 피드백 작동
-    if (targetWords[builtWords.length] === word) {
-        builtWords.push(word); renderBuilder(); renderPool(); document.getElementById('msg-box').innerHTML = "";
-        if (builtWords.length === targetWords.length) { handleSuccess(); }
+    const firstEmptyIdx = builtWords.indexOf(null);
+    if (firstEmptyIdx === -1) return;
+    if (targetWords[firstEmptyIdx] === word) {
+        builtWords[firstEmptyIdx] = word; renderBuilder(); renderPool(); document.getElementById('msg-box').innerHTML = "";
+        if (builtWords.every(w => w !== null)) { handleSuccess(); }
     } else {
         currentWrongCount++;
         if (currentWrongCount >= 5) {
@@ -2040,15 +2083,16 @@ async function selectWord(word) {
     }
 }
 
-function removeLastWord() {
+function removeWordAt(idx) {
     if (isLockingNext) return; 
     playClickSound(); // 🎵 조립했던 단어를 취소하여 꺼낼 때도 깔끔한 클릭음 작동
-    builtWords.pop(); renderBuilder(); renderPool(); 
+    builtWords[idx] = null; renderBuilder(); renderPool(); 
 }
 
 function showNextWordHint() {
     if (isLockingNext || currentIdx === -1) return;
-    let nextW = targetWords[builtWords.length];
+    const firstEmptyIdx = builtWords.indexOf(null);
+    let nextW = firstEmptyIdx !== -1 ? targetWords[firstEmptyIdx] : null;
     if (nextW) document.getElementById('msg-box').innerHTML = `<span class='hint-flash'>💡 다음 단어 조각: [ ${nextW} ]</span>`;
 }
 
@@ -2070,15 +2114,22 @@ async function handleSuccess() {
         reviewPool = reviewPool.filter(item => item.id !== db[currentIdx].id);
         roundDeck = roundDeck.filter(item => item.id !== db[currentIdx].id);
         
+        // ⚠️ count 필드는 보내지 않음 — merge:true라 서버에 이미 저장된 최신 count가 그대로 유지됨
+        // (오래된 로컬 count 값을 다시 써서 다른 기기의 갱신을 덮어쓰는 사고 방지)
         await setDoc(doc(sentenceRef, db[currentIdx].id), {
-            eng: db[currentIdx].eng, kor: db[currentIdx].kor, count: db[currentIdx].count, weight: 5, last_reviewed: db[currentIdx].last_reviewed
+            eng: db[currentIdx].eng, kor: db[currentIdx].kor, weight: 5, last_reviewed: db[currentIdx].last_reviewed
         }, { merge: true });
     } else {
-        db[currentIdx].count = (db[currentIdx].count || 0) + 1;
+        db[currentIdx].count = (db[currentIdx].count || 0) + 1; // 화면 표시용 낙관적(optimistic) 갱신 — 실제 서버 값은 increment()가 별도로 정확히 계산
         db[currentIdx].last_reviewed = Date.now(); 
+        const ccBadge2 = document.getElementById('correct-count-badge');
+        if (ccBadge2) ccBadge2.innerText = `✅ ${db[currentIdx].count}회 맞힘`;
+        document.getElementById('stat-count').innerText = db[currentIdx].count;
         
+        // ⚠️ count는 클라이언트가 들고 있는 값을 그대로 쓰지 않고 increment(1)로 서버 측에서 원자적으로 +1
+        // (오래된 기기/탭이 늦게 실행되어도 다른 기기에서 쌓인 최신 count를 덮어쓰지 않음)
         await setDoc(doc(sentenceRef, db[currentIdx].id), {
-            eng: db[currentIdx].eng, kor: db[currentIdx].kor, count: db[currentIdx].count, weight: 5, last_reviewed: db[currentIdx].last_reviewed
+            eng: db[currentIdx].eng, kor: db[currentIdx].kor, count: increment(1), weight: 5, last_reviewed: db[currentIdx].last_reviewed
         }, { merge: true });
     }
 
