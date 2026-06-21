@@ -94,6 +94,9 @@
         .skip-btn { background-color: var(--skip-color); }
         .skip-btn:active { transform: scale(0.95); background-color: var(--skip-active); }
 
+        .master-btn { background-color: var(--room-color); }
+        .master-btn:active { transform: scale(0.95); background-color: #6d28d9; }
+
         /* 🎙️ 말하기 모드 전용 버튼 */
         .speak-mode-btn { background-color: var(--mic-color) !important; font-size: 0.95rem !important; flex: 2 !important; min-width: 150px !important; box-shadow: 0 4px 6px rgba(220, 38, 38, 0.2); }
         .speak-mode-btn:active { background-color: var(--mic-active) !important; transform: scale(0.95); }
@@ -130,6 +133,27 @@
             box-shadow: none !important;
             cursor: default !important;
             transform: none !important;
+        }
+
+        /* ❌ 오답으로 누른 단어: 빨갛게 흔들림 */
+        .pool-item.wrong-shake {
+            animation: wrong-shake 0.4s ease;
+        }
+        @keyframes wrong-shake {
+            0%, 100% { background-color: #fff; border-color: #e2e8f0; transform: translateX(0); }
+            20% { background-color: #fee2e2; border-color: #ef4444; transform: translateX(-6px); }
+            40% { background-color: #fee2e2; border-color: #ef4444; transform: translateX(6px); }
+            60% { background-color: #fee2e2; border-color: #ef4444; transform: translateX(-4px); }
+            80% { background-color: #fee2e2; border-color: #ef4444; transform: translateX(4px); }
+        }
+
+        /* ✅ 정답 단어 위치 알려주기: 초록색으로 깜빡임 */
+        .pool-item.correct-flash {
+            animation: correct-flash 0.55s ease-in-out 2;
+        }
+        @keyframes correct-flash {
+            0%, 100% { background-color: #fff; border-color: #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+            50% { background-color: #dcfce7; border-color: #22c55e; box-shadow: 0 0 10px rgba(34,197,94,0.5); }
         }
 
         /* 설정 폼 스타일 */
@@ -420,6 +444,7 @@
                 <button class="hint-btn" id="hint-btn">💡 힌트</button>
                 <button class="answer-btn" id="answer-btn">👁️ 정답</button>
                 <button class="skip-btn" id="skip-btn">⚡ Skip</button>
+                <button class="master-btn" id="master-btn">🌌 외움</button>
             </div>
             <div id="msg-box"></div>
             <div id="example-box"></div>
@@ -1800,6 +1825,7 @@ document.addEventListener("DOMContentLoaded", function() {
     document.getElementById('hint-btn').addEventListener('click', showNextWordHint);
     document.getElementById('answer-btn').addEventListener('click', showFullAnswer);
     document.getElementById('skip-btn').addEventListener('click', skipCurrentQuestion);
+    document.getElementById('master-btn').addEventListener('click', sendToMasterRoom);
     document.getElementById('add-btn').addEventListener('click', addSentence);
     document.getElementById('speak-btn').addEventListener('click', toggleListening);
     document.getElementById('ai-rec-trigger-btn').addEventListener('click', processSmartAIRecommendations);
@@ -2051,13 +2077,14 @@ function renderPool() {
     builtWords.forEach(w => { if (w !== null) usedCounts[w] = (usedCounts[w] || 0) + 1; });
     poolWords.forEach(w => {
         let btn = document.createElement('button'); btn.className = "pool-item"; btn.innerText = w;
+        btn.dataset.word = w;
         if (usedCounts[w] && usedCounts[w] > 0) { btn.classList.add('selected'); usedCounts[w]--; } 
-        else { if (!isLockingNext) { btn.addEventListener('click', () => selectWord(w)); } }
+        else { if (!isLockingNext) { btn.addEventListener('click', () => selectWord(w, btn)); } }
         pool.appendChild(btn);
     });
 }
 
-async function selectWord(word) {
+async function selectWord(word, btnEl) {
     if (isLockingNext) return; 
     playClickSound(); // 🎵 단어를 선택했을 때 소리 피드백 작동
     const firstEmptyIdx = builtWords.indexOf(null);
@@ -2067,6 +2094,10 @@ async function selectWord(word) {
         if (builtWords.every(w => w !== null)) { handleSuccess(); }
     } else {
         currentWrongCount++;
+
+        // ❌✅ 누른 단어는 빨갛게 흔들고, 진짜 정답 단어는 초록색으로 깜빡여서 위치를 알려줌
+        flashWrongAndCorrect(btnEl, targetWords[firstEmptyIdx]);
+
         if (currentWrongCount >= 5) {
             // 5번 틀리면 정답 읽어주고 자동으로 다음 문제
             document.getElementById('msg-box').innerHTML = `<span class='error'>❌ 정답:</span><br><span class='show-answer-flash'><b>${db[currentIdx].eng}</b></span>`;
@@ -2080,6 +2111,28 @@ async function selectWord(word) {
         } else {
             document.getElementById('msg-box').innerHTML = `<span class='error'>❌ 순서가 조금 틀렸어요!</span>`;
         }
+    }
+}
+
+function flashWrongAndCorrect(wrongBtnEl, correctWord) {
+    // 누른 단어 빨간색 흔들림
+    if (wrongBtnEl) {
+        wrongBtnEl.classList.remove('wrong-shake'); // 재실행 위해 초기화
+        // 강제 리플로우로 애니메이션 재시작 보장
+        void wrongBtnEl.offsetWidth;
+        wrongBtnEl.classList.add('wrong-shake');
+        wrongBtnEl.addEventListener('animationend', () => wrongBtnEl.classList.remove('wrong-shake'), { once: true });
+    }
+    // 진짜 정답 단어 버튼을 풀에서 찾아 초록색으로 깜빡임 (이미 선택되어 빠진 상태가 아닌 것만)
+    const pool = document.getElementById('word-pool');
+    if (!pool) return;
+    const candidates = Array.from(pool.querySelectorAll('.pool-item')).filter(b => b.dataset.word === correctWord && !b.classList.contains('selected'));
+    const correctBtnEl = candidates[0];
+    if (correctBtnEl && correctBtnEl !== wrongBtnEl) {
+        correctBtnEl.classList.remove('correct-flash');
+        void correctBtnEl.offsetWidth;
+        correctBtnEl.classList.add('correct-flash');
+        correctBtnEl.addEventListener('animationend', () => correctBtnEl.classList.remove('correct-flash'), { once: true });
     }
 }
 
@@ -2104,6 +2157,26 @@ function showFullAnswer() {
 
 function skipCurrentQuestion() {
     if (isLockingNext || currentIdx === -1) return; lastSolvedId = db[currentIdx].id; initGame();
+}
+
+// 🌌 문장 풀다가 "이건 이제 알겠다" 싶으면 즉시 외운 문장룸으로 보내기
+async function sendToMasterRoom() {
+    if (isLockingNext || currentIdx === -1) return;
+    if (isReviewMode) { alert('복습 모드에서는 이 버튼을 사용할 수 없어요.'); return; }
+
+    const item = db[currentIdx];
+    if (!confirm(`"${item.eng}"\n이 문장을 외운 문장룸으로 바로 보낼까요?`)) return;
+
+    isLockingNext = true;
+    item.count = Math.max(item.count || 0, 20); // 화면 표시용 낙관적 갱신
+    item.last_reviewed = Date.now();
+
+    await forceMoveToMaster(item.id); // 관리 탭 '마스터↑'와 동일한 검증된 로직 재사용
+
+    lastSolvedId = item.id;
+    document.getElementById('msg-box').innerHTML = `<span class='success-flash'>🌌 외운 문장룸으로 이동했어요!</span>`;
+
+    setTimeout(() => { isLockingNext = false; initGame(); }, 700);
 }
 
 async function handleSuccess() {
