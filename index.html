@@ -325,8 +325,8 @@
         .content { flex: 1; padding: 16px 16px 12px; display: flex; flex-direction: column; overflow: hidden; }
 
         /* ━━━ 듣기 탭 플레이어 카드 ━━━ */
-        .listen-player-card { background: linear-gradient(145deg, #4f46e5 0%, #7c3aed 100%); border-radius: 20px; padding: 22px 20px 18px; color: white; margin-bottom: 14px; flex-shrink: 0; }
-        .lp-cover { display: flex; justify-content: center; margin-bottom: 14px; }
+        .listen-player-card { background: linear-gradient(145deg, #4f46e5 0%, #7c3aed 100%); border-radius: 20px; padding: 22px 20px 18px; color: white; margin-bottom: 14px; flex-shrink: 0; position: relative; }
+        .lp-cover { display: flex; justify-content: center; margin-bottom: 14px; cursor: pointer; }
         .lp-disc { width: 72px; height: 72px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
         .lp-disc.spinning { animation: disc-spin 3s linear infinite; }
         @keyframes disc-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -336,6 +336,36 @@
         .lp-controls { display: flex; gap: 8px; margin-bottom: 12px; }
         .lp-btn { flex: 1; padding: 10px 6px; border: none; border-radius: 10px; font-weight: bold; font-size: 0.82rem; cursor: pointer; transition: transform 0.1s, opacity 0.1s; }
         .lp-btn:active { transform: scale(0.95); opacity: 0.85; }
+
+        /* ⛶ 전체화면 진입 버튼 */
+        .lp-fullscreen-btn { position: absolute; top: 16px; right: 16px; width: 34px; height: 34px; border: none; border-radius: 10px; background: rgba(255,255,255,0.18); color: white; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.1s, opacity 0.1s; }
+        .lp-fullscreen-btn:active { transform: scale(0.92); opacity: 0.85; }
+
+        /* 🌌 듣기 중 외운 문장룸으로 즉시 보내기 */
+        .lp-master-btn { width: 100%; padding: 11px; border: 1px dashed rgba(255,255,255,0.5); border-radius: 10px; background: rgba(255,255,255,0.1); color: white; font-weight: bold; font-size: 0.85rem; cursor: pointer; transition: transform 0.1s, opacity 0.1s, background 0.15s; }
+        .lp-master-btn:active { transform: scale(0.97); background: rgba(255,255,255,0.22); }
+
+        /* 🖥️ 듣기 전체화면 오버레이 */
+        #listen-fullscreen-overlay {
+            display: none; position: fixed; inset: 0; z-index: 999;
+            background: linear-gradient(165deg, #4338ca 0%, #6d28d9 55%, #312e81 100%);
+            color: white; flex-direction: column; align-items: center; justify-content: center;
+            padding: 32px 24px; text-align: center;
+        }
+        #listen-fullscreen-overlay.open { display: flex; }
+        .lfs-close-btn { position: absolute; top: env(safe-area-inset-top, 18px); right: 18px; width: 42px; height: 42px; border: none; border-radius: 50%; background: rgba(255,255,255,0.15); color: white; font-size: 1.3rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .lfs-close-btn:active { background: rgba(255,255,255,0.28); transform: scale(0.93); }
+        .lfs-disc { width: 132px; height: 132px; background: rgba(255,255,255,0.12); border: 2px solid rgba(255,255,255,0.25); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3.6rem; margin-bottom: 32px; flex-shrink: 0; }
+        .lfs-disc.spinning { animation: disc-spin 3s linear infinite; }
+        .lfs-eng { font-size: 1.55rem; font-weight: 800; line-height: 1.4; max-width: 90%; margin-bottom: 14px; }
+        .lfs-kor { font-size: 1.05rem; color: rgba(255,255,255,0.78); max-width: 88%; margin-bottom: 18px; line-height: 1.5; }
+        .lfs-progress { font-size: 0.85rem; color: rgba(255,255,255,0.55); margin-bottom: 34px; }
+        .lfs-controls { display: flex; gap: 12px; width: 100%; max-width: 360px; margin-bottom: 22px; }
+        .lfs-btn { flex: 1; padding: 16px 8px; border: none; border-radius: 14px; background: rgba(255,255,255,0.16); color: white; font-weight: bold; font-size: 0.95rem; cursor: pointer; transition: transform 0.1s, opacity 0.1s; }
+        .lfs-btn:active { transform: scale(0.95); opacity: 0.85; }
+        .lfs-btn.lfs-play { background: white; color: #4338ca; flex: 1.4; }
+        .lfs-master-btn { padding: 13px 22px; border: 1px dashed rgba(255,255,255,0.5); border-radius: 12px; background: rgba(255,255,255,0.08); color: white; font-weight: bold; font-size: 0.88rem; cursor: pointer; transition: transform 0.1s, opacity 0.1s, background 0.15s; }
+        .lfs-master-btn:active { transform: scale(0.96); background: rgba(255,255,255,0.2); }
         .lp-repeat { background: rgba(255,255,255,0.2); color: white; }
         .lp-repeat.on { background: #fbbf24; color: #78350f; }
         .lp-play { background: white; color: var(--primary-color); }
@@ -472,6 +502,7 @@
                 <button type="button" class="cat-trigger" id="listen-cat-trigger" onclick="openListenFilter()">📚 전체 듣기</button>
             </div>
             <div class="listen-player-card">
+                <button class="lp-fullscreen-btn" id="lp-fullscreen-btn" onclick="openListenFullscreen()" title="전체화면으로 보기">⛶</button>
                 <div class="lp-cover" id="lp-cover">
                     <div class="lp-disc" id="lp-disc">🎧</div>
                 </div>
@@ -483,12 +514,28 @@
                     <button class="lp-btn lp-play" id="lp-play-btn" onclick="toggleListenMode()">▶ 재생</button>
                     <button class="lp-btn lp-stop" onclick="stopListenMode()">⏹ 정지</button>
                 </div>
+                <button class="lp-master-btn" id="lp-master-btn" onclick="sendListenItemToMaster()">🌌 이 문장 외운 문장룸으로 보내기</button>
 
             </div>
             <div class="scroll-container" style="margin-top:12px;">
                 <h3 style="font-size:1rem;color:#64748b;margin-bottom:8px;">개별 문장 듣기</h3>
                 <ul class="sentence-list" id="listen-sentence-list"></ul>
             </div>
+        </div>
+
+        <!-- 🖥️ 듣기 전체화면 오버레이 -->
+        <div id="listen-fullscreen-overlay">
+            <button class="lfs-close-btn" onclick="closeListenFullscreen()" aria-label="전체화면 닫기">✕</button>
+            <div class="lfs-disc" id="lfs-disc">🎧</div>
+            <div class="lfs-eng" id="lfs-eng">재생 대기 중...</div>
+            <div class="lfs-kor" id="lfs-kor"></div>
+            <div class="lfs-progress" id="lfs-progress"></div>
+            <div class="lfs-controls">
+                <button class="lfs-btn" id="lfs-repeat-btn" onclick="toggleRepeat()">🔁 반복 ON</button>
+                <button class="lfs-btn lfs-play" id="lfs-play-btn" onclick="toggleListenMode()">▶ 재생</button>
+                <button class="lfs-btn" onclick="stopListenMode()">⏹ 정지</button>
+            </div>
+            <button class="lfs-master-btn" id="lfs-master-btn" onclick="sendListenItemToMaster()">🌌 이 문장 외운 문장룸으로 보내기</button>
         </div>
 
         <!-- ── 탭3: 문장 관리 ── -->
@@ -1838,6 +1885,12 @@ onSnapshot(sentenceRef, (snapshot) => {
 });
 
 document.addEventListener("DOMContentLoaded", function() {
+    // ⌨️ ESC 키로 듣기 전체화면 닫기
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeListenFullscreen(); });
+    // 🎧 앨범아트 탭으로도 전체화면 진입
+    const lpCover = document.getElementById('lp-cover');
+    if (lpCover) lpCover.addEventListener('click', openListenFullscreen);
+
     document.getElementById('start-btn').addEventListener('click', handleStart);
     document.getElementById('hint-btn').addEventListener('click', showNextWordHint);
     document.getElementById('answer-btn').addEventListener('click', showFullAnswer);
@@ -1886,6 +1939,7 @@ function switchTab(tab) {
         if (view) view.classList.toggle('active', t === tab);
         if (btn)  btn.classList.toggle('active',  t === tab);
     });
+    if (tab !== 'listen') closeListenFullscreen(); // 듣기 탭을 벗어나면 전체화면 자동 종료
     if (tab === 'study') {
         initGame();
         updateReviewBadge();
@@ -3079,6 +3133,7 @@ function updateListenBar() {
     const eng = cur ? cur.eng : '재생 대기 중...';
     const kor = cur ? cur.kor : '';
     const prog = listenActive ? `${listenRepeat ? '🔁' : '▶'} ${listenIdx + 1} / ${listenQueue.length}` : '';
+    const playLabel = listenActive ? '⏸ 일시정지' : (listenPaused ? '▶ 계속 듣기' : '▶ 재생');
 
     // 듣기 탭 플레이어 카드 업데이트
     const lpEng  = document.getElementById('lp-now-eng');
@@ -3090,16 +3145,66 @@ function updateListenBar() {
     if (lpEng)  lpEng.textContent  = eng;
     if (lpKor)  lpKor.textContent  = kor;
     if (lpProg) lpProg.textContent = prog;
-    if (lpPlay) {
-        if (listenActive)      lpPlay.textContent = '⏸ 일시정지';
-        else if (listenPaused) lpPlay.textContent = '▶ 계속 듣기';
-        else                   lpPlay.textContent = '▶ 재생';
-    }
+    if (lpPlay) lpPlay.textContent = playLabel;
     if (lpRep)  { lpRep.textContent = listenRepeat ? '🔁 반복 ON' : '🔁 반복 OFF'; lpRep.classList.toggle('on', listenRepeat); }
     if (lpDisc) lpDisc.classList.toggle('spinning', listenActive);
 
+    // 🖥️ 전체화면 오버레이도 동일 정보로 동기화
+    const lfsEng  = document.getElementById('lfs-eng');
+    const lfsKor  = document.getElementById('lfs-kor');
+    const lfsProg = document.getElementById('lfs-progress');
+    const lfsPlay = document.getElementById('lfs-play-btn');
+    const lfsRep  = document.getElementById('lfs-repeat-btn');
+    const lfsDisc = document.getElementById('lfs-disc');
+    if (lfsEng)  lfsEng.textContent  = eng;
+    if (lfsKor)  lfsKor.textContent  = kor;
+    if (lfsProg) lfsProg.textContent = prog;
+    if (lfsPlay) lfsPlay.textContent = playLabel;
+    if (lfsRep)  { lfsRep.textContent = listenRepeat ? '🔁 반복 ON' : '🔁 반복 OFF'; lfsRep.classList.toggle('on', listenRepeat); }
+    if (lfsDisc) lfsDisc.classList.toggle('spinning', listenActive);
+
+    // 🌌 마스터(외운 문장룸)로 보내기 버튼: 재생 중인 문장이 없으면 숨김, 이미 마스터면 라벨 변경
+    const curItem = cur ? db.find(i => i.id === cur.id) : null;
+    const isAlreadyMaster = curItem && (curItem.count || 0) >= 20;
+    [document.getElementById('lp-master-btn'), document.getElementById('lfs-master-btn')].forEach(btn => {
+        if (!btn) return;
+        if (!cur || !cur.id) { btn.style.display = 'none'; return; }
+        btn.style.display = 'block';
+        btn.disabled = !!isAlreadyMaster;
+        btn.textContent = isAlreadyMaster ? '🌌 이미 외운 문장룸에 있어요' : '🌌 이 문장 외운 문장룸으로 보내기';
+    });
+
     updateMiniBar();
 }
+
+// 🖥️ 듣기 전체화면 모드 진입/종료
+window.openListenFullscreen = function() {
+    const overlay = document.getElementById('listen-fullscreen-overlay');
+    if (overlay) overlay.classList.add('open');
+    updateListenBar();
+};
+window.closeListenFullscreen = function() {
+    const overlay = document.getElementById('listen-fullscreen-overlay');
+    if (overlay) overlay.classList.remove('open');
+};
+
+// 🌌 듣기 중인 문장을 즉시 외운 문장룸으로 보내기 (학습 탭의 sendToMasterRoom과 동일한 동작 원리)
+window.sendListenItemToMaster = async function() {
+    const cur = listenQueue[listenIdx];
+    if (!cur || !cur.id) return;
+    const item = db.find(i => i.id === cur.id);
+    if (!item) return;
+    if ((item.count || 0) >= 20) return; // 이미 마스터
+
+    if (!confirm(`"${item.eng}"\n이 문장을 외운 문장룸으로 바로 보낼까요?`)) return;
+
+    item.count = Math.max(item.count || 0, 20); // 화면 표시용 낙관적 갱신
+    item.last_reviewed = Date.now();
+    await forceMoveToMaster(item.id);
+
+    updateListenBar();
+    renderListenList();
+};
 
 function updateMiniBar() {
     // 학습 탭에 있을 때 재생 중이면 상단 미니바 표시
@@ -3271,7 +3376,7 @@ function startListenAll() {
     // 학습 중 문장만 (마스터 제외) + 카테고리 필터
     const normal = db.filter(i => (i.count || 0) < 20 && listenInCats(i));
     if (normal.length === 0) { alert("선택한 범위에 학습 중인 문장이 없습니다."); return; }
-    listenQueue  = normal.map(i => ({ eng: i.eng, kor: i.kor }));
+    listenQueue  = normal.map(i => ({ id: i.id, eng: i.eng, kor: i.kor }));
     listenIdx    = 0;
     listenActive = true;
     listenRepeat = true;
@@ -3285,7 +3390,7 @@ function startListenAllFull() {
     const normal = db.filter(i => (i.count || 0) < 20 && listenInCats(i));
     const master = db.filter(i => (i.count || 0) >= 20 && listenInCats(i));
     if (normal.length + master.length === 0) { alert("선택한 범위에 들을 문장이 없습니다."); return; }
-    listenQueue  = [...normal, ...master].map(i => ({ eng: i.eng, kor: i.kor }));
+    listenQueue  = [...normal, ...master].map(i => ({ id: i.id, eng: i.eng, kor: i.kor }));
     listenIdx    = 0;
     listenActive = true;
     listenPaused = false;
@@ -3298,7 +3403,7 @@ function startListenAllFull() {
 function listenOne(id) {
     const item = db.find(i => i.id === id);
     if (!item) return;
-    listenQueue  = [{ eng: item.eng, kor: item.kor }];
+    listenQueue  = [{ id: item.id, eng: item.eng, kor: item.kor }];
     listenIdx    = 0;
     listenActive = true;
     listenPaused = false;
