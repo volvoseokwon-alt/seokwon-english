@@ -394,6 +394,11 @@
         .cat-trigger { flex: 1; text-align: left; padding: 10px 12px; border: 1px solid #c7d2fe; border-radius: 9px; font-size: 0.92rem; font-weight: 700; color: #3730a3; background: #fff; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .cat-trigger:active { background: #eef2ff; }
         .cat-trigger::after { content: " ▾"; color: #818cf8; }
+
+        /* 🎯 듣기 범위 선택: 학습 중만 / 전체(학습+외운) / 외운 문장만 */
+        .listen-scope-btn { flex-shrink: 0; padding: 10px 12px; border: 1px solid #c7d2fe; border-radius: 9px; font-size: 0.82rem; font-weight: 700; color: #3730a3; background: #fff; cursor: pointer; white-space: nowrap; }
+        .listen-scope-btn:active { background: #eef2ff; transform: scale(0.97); }
+        .listen-scope-btn.scope-master { color: var(--room-color); border-color: #ddd6fe; background: #f5f3ff; }
         #study-filter-overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 10000; align-items: flex-end; justify-content: center; }
         #study-filter-overlay.open { display: flex; }
         #study-filter-card { background: #fff; width: 100%; max-width: 500px; border-radius: 20px 20px 0 0; padding: 18px 18px 22px; box-shadow: 0 -8px 30px rgba(0,0,0,0.2); animation: cp-up 0.22s ease; max-height: 80vh; overflow-y: auto; }
@@ -500,6 +505,7 @@
             <div class="cat-filter-bar">
                 <span class="cat-ico">🏷️</span>
                 <button type="button" class="cat-trigger" id="listen-cat-trigger" onclick="openListenFilter()">📚 전체 듣기</button>
+                <button type="button" class="listen-scope-btn" id="listen-scope-btn" onclick="cycleListenScope()">🌱 학습 중만</button>
             </div>
             <div class="listen-player-card">
                 <button class="lp-fullscreen-btn" id="lp-fullscreen-btn" onclick="openListenFullscreen()" title="전체화면으로 보기">⛶</button>
@@ -763,6 +769,7 @@ let roundNumber = 0;
 let selectedCategories = [];
 let listenCategories = []; // 듣기 탭 카테고리 선택 (빈 배열 = 전체)
 let manageCategories = []; // 문장 관리 탭 카테고리 선택 (빈 배열 = 전체)
+let listenScope = 'study'; // 듣기 범위: 'study'=학습 중만, 'all'=학습 중+외운 문장, 'master'=외운 문장만
 let filterMode = 'study';  // 팝업 대상: 'study' | 'listen' | 'manage'
 let sfTemp = []; // 팝업에서 임시 선택 상태
 // 자주 쓰는 프리셋 카테고리 (원클릭 칩). 목록에 없는 건 직접 입력 가능
@@ -1901,6 +1908,7 @@ document.addEventListener("DOMContentLoaded", function() {
     document.getElementById('ai-rec-trigger-btn').addEventListener('click', processSmartAIRecommendations);
     loadVoices(); initSpeechRecognition(); initGoal();
     renderCatChips();
+    updateListenScopeLabel();
     const gks = document.getElementById('ai-key-status');
     const provSel = document.getElementById('ai-provider');
     if (provSel) provSel.value = getAIProvider();
@@ -3372,11 +3380,21 @@ function onListenStop() {
     try { if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'none'; } catch (e) {}
 }
 
+// 🎯 listenScope에 따라 학습 중/외운 문장 풀을 구성해 재생 시작
 function startListenAll() {
-    // 학습 중 문장만 (마스터 제외) + 카테고리 필터
     const normal = db.filter(i => (i.count || 0) < 20 && listenInCats(i));
-    if (normal.length === 0) { alert("선택한 범위에 학습 중인 문장이 없습니다."); return; }
-    listenQueue  = normal.map(i => ({ id: i.id, eng: i.eng, kor: i.kor }));
+    const master = db.filter(i => (i.count || 0) >= 20 && listenInCats(i));
+    let pool;
+    if (listenScope === 'master') pool = master;
+    else if (listenScope === 'all') pool = [...normal, ...master];
+    else pool = normal; // 'study'
+
+    if (pool.length === 0) {
+        const label = listenScope === 'master' ? '외운 문장' : listenScope === 'all' ? '문장' : '학습 중인 문장';
+        alert(`선택한 범위에 ${label}이 없습니다.`);
+        return;
+    }
+    listenQueue  = pool.map(i => ({ id: i.id, eng: i.eng, kor: i.kor }));
     listenIdx    = 0;
     listenActive = true;
     listenRepeat = true;
@@ -3385,19 +3403,22 @@ function startListenAll() {
     listenNext();
 }
 
-function startListenAllFull() {
-    // 학습 중 + 마스터룸 전부 + 카테고리 필터
-    const normal = db.filter(i => (i.count || 0) < 20 && listenInCats(i));
-    const master = db.filter(i => (i.count || 0) >= 20 && listenInCats(i));
-    if (normal.length + master.length === 0) { alert("선택한 범위에 들을 문장이 없습니다."); return; }
-    listenQueue  = [...normal, ...master].map(i => ({ id: i.id, eng: i.eng, kor: i.kor }));
-    listenIdx    = 0;
-    listenActive = true;
-    listenPaused = false;
-    listenRepeat = true;
-    onListenStart();
-    updateListenBar();
-    listenNext();
+function startListenAllFull() { startListenAll(); }
+
+// 🔁 듣기 범위 순환 선택: 학습 중만 → 전체(학습+외운) → 외운 문장만 → 처음으로
+window.cycleListenScope = function() {
+    listenScope = listenScope === 'study' ? 'all' : listenScope === 'all' ? 'master' : 'study';
+    updateListenScopeLabel();
+    if (listenActive || listenPaused) { stopListenMode(); startListenAll(); }
+};
+
+function updateListenScopeLabel() {
+    const btn = document.getElementById('listen-scope-btn');
+    if (!btn) return;
+    btn.classList.toggle('scope-master', listenScope === 'master');
+    if (listenScope === 'master') btn.textContent = '🌌 외운 문장만';
+    else if (listenScope === 'all') btn.textContent = '📦 전체(학습+외움)';
+    else btn.textContent = '🌱 학습 중만';
 }
 
 function listenOne(id) {
