@@ -111,6 +111,14 @@
         .review-mode-btn { background-color: var(--review-color) !important; font-size: 0.95rem !important; width: 100%; margin-bottom: 15px; padding: 12px !important; box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; display: none; }
         .review-mode-btn:active { background-color: #d97706 !important; transform: scale(0.98); }
 
+        /* 🔁 오늘 틀린 문장 다시 풀기 */
+        .missed-mode-btn { background-color: #dc2626 !important; font-size: 0.95rem !important; width: 100%; margin-bottom: 15px; padding: 12px !important; box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; display: none; }
+        .missed-mode-btn:active { background-color: #b91c1c !important; transform: scale(0.98); }
+
+        /* 🔊 한글 자동 읽어주기 토글 */
+        .kor-read-toggle { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: #64748b; font-weight: 600; margin-bottom: 8px; cursor: pointer; }
+        .kor-read-toggle input { width: 16px; height: 16px; }
+
         /* 단어 풀 스타일 */
         .word-pool { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; padding-top: 4px; padding-bottom: 8px; border-top: 1px solid #f1f5f9; }
         /* 📝 단어·숙어 노트 */
@@ -192,6 +200,7 @@
         
         .count-badge { background-color: #e0e7ff; color: #4338ca; font-size: 0.75rem; font-weight: bold; padding: 4px 8px; border-radius: 6px; white-space: nowrap; }
         .master-badge { background-color: #f3e8ff; color: var(--room-color); font-size: 0.75rem; font-weight: bold; padding: 4px 8px; border-radius: 6px; white-space: nowrap; }
+        .weak-badge { background-color: #fef2f2; color: #dc2626; font-size: 0.75rem; font-weight: bold; padding: 4px 8px; border-radius: 6px; white-space: nowrap; }
         
         .btn-group { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
         .del-btn { color: var(--error-color); font-weight: bold; font-size: 0.85rem; border: 1px solid var(--error-color); padding: 5px 10px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
@@ -428,12 +437,16 @@
                 <button class="lmb-stop" onclick="stopListenMode()">⏹</button>
             </div>
             <button class="review-mode-btn" id="review-btn" onclick="startReviewMode()">⏳ 잊혀져 가는 마스터 문장 복습하기</button>
+            <button class="missed-mode-btn" id="missed-review-btn" onclick="startMissedReviewMode()">🔁 오늘 틀린 문장 0개 — 다시 풀기</button>
             <div class="cat-filter-bar">
                 <span class="cat-ico">🏷️</span>
                 <button type="button" class="cat-trigger" id="study-cat-trigger" onclick="openStudyFilter()">📚 전체</button>
                 <span class="cat-remaining" id="cat-remaining"></span>
                 <span class="correct-count-badge" id="correct-count-badge">✅ 0회 맞힘</span>
             </div>
+            <label class="kor-read-toggle">
+                <input type="checkbox" id="kor-read-aloud" onchange="saveKorReadAloud()">🔊 문제 나올 때 한글 뜻 읽어주기
+            </label>
             <div class="quiz-box" id="quiz-box-container">
                 <div id="kor-meaning">서버에서 문장을 동기화하는 중...</div>
             </div>
@@ -680,6 +693,8 @@ const calendarRef = collection(dbFS, "calendar");
 
 let db = [];
 let currentWrongCount = 0; 
+let missedThisItem = false; // 이번 문제에서 한 번이라도 틀렸는지 (통과 시 wrong_count 누적용)
+let todayMissedIds = [];    // 오늘 세션 중 틀렸던 문장 id 목록 ("오늘 틀린 문장 다시 보기"용)
 let currentIdx = -1;
 let lastSolvedId = ""; 
 let builtWords = [];
@@ -687,6 +702,7 @@ let targetWords = [];
 let poolWords = []; 
 let isFirstLoad = true;
 let isLockingNext = false; 
+let isMissedReviewMode = false; // "오늘 틀린 문장 다시 보기" 모드 여부
 
 // 복습 모드 상태 관리
 let isReviewMode = false;
@@ -1806,6 +1822,7 @@ onSnapshot(sentenceRef, (snapshot) => {
     db = serverData;
     
     updateReviewBadge();
+    updateMissedReviewBadge();
 
     // 🛠️ [실시간 동기화 수정]: 백그라운드 분기를 없애고, DB에 변화가 생기면 무조건 리스트를 즉시 리렌더링합니다.[cite: 3]
     renderLists();
@@ -1841,6 +1858,8 @@ document.addEventListener("DOMContentLoaded", function() {
     if (wlCb) wlCb.checked = wakeLockEnabled();
     const bgCb = document.getElementById('bg-listen-enabled');
     if (bgCb) bgCb.checked = bgListenEnabled();
+    const korReadCb = document.getElementById('kor-read-aloud');
+    if (korReadCb) korReadCb.checked = isKorReadAloudOn();
     if (gks && (!needsKey() || getAIKey())) {
         const pv = getAIProvider();
         const pname = pv === 'openai' ? 'OpenAI' : (pv === 'puter' ? 'Puter(무료)' : (pv === 'pollinations' ? 'Pollinations(무료)' : 'Gemini'));
@@ -1870,6 +1889,7 @@ function switchTab(tab) {
     if (tab === 'study') {
         initGame();
         updateReviewBadge();
+        updateMissedReviewBadge();
     } else {
         if (recognition && isListening) recognition.stop();
     }
@@ -1890,11 +1910,27 @@ function switchTab(tab) {
 window.switchTab = switchTab;
 
 // ⏳ 간격 반복: 복습할 문장 수를 복습 버튼에 표시
+// 📈 SM-2 스타일 간격 반복: count(맞힌 횟수) 단계가 올라갈수록 다음 복습까지의 간격을 늘림
+//    20회(마스터 진입) → 1일 → 3일 → 7일 → 14일 → 30일(그 이후는 30일 고정)
+function getReviewIntervalDays(count) {
+    if (count < 20) return 0;
+    if (count < 22) return 1;   // 마스터 직후 1일 뒤 첫 복습
+    if (count < 24) return 3;
+    if (count < 26) return 7;
+    if (count < 28) return 14;
+    return 30;
+}
+function isDueForReview(item) {
+    const c = item.count || 0;
+    if (c < 20) return false;
+    const intervalMs = getReviewIntervalDays(c) * 24 * 60 * 60 * 1000;
+    return (item.last_reviewed || 0) < (Date.now() - intervalMs);
+}
+
 function updateReviewBadge() {
     const btn = document.getElementById('review-btn');
     if (!btn) return;
-    const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000);
-    const due = db.filter(i => (i.count || 0) >= 20 && (i.last_reviewed || 0) < threeDaysAgo).length;
+    const due = db.filter(isDueForReview).length;
     if (due > 0 && !isReviewMode) {
         btn.style.display = 'block';
         btn.textContent = `⏳ 복습할 문장 ${due}개 — 지금 복습하기`;
@@ -1941,13 +1977,34 @@ function renderCategoryProgress() {
 window.startReviewMode = function() {
     isReviewMode = true;
     roundDeck = []; // 덱 초기화
-    const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000);
-    reviewPool = db.filter(item => (item.count || 0) >= 20 && (item.last_reviewed || 0) < threeDaysAgo);
+    reviewPool = db.filter(isDueForReview);
     
     if (reviewPool.length > 0) {
         document.getElementById('review-btn').style.display = 'none';
         alert(`총 ${reviewPool.length}개의 복습 문장이 있습니다. 시작합니다!`);
         initGame();
+    }
+}
+
+// 🔁 오늘 틀린 문장 다시 풀기 모드: 세션 중 한 번이라도 틀렸던 문장만 모아서 재도전
+window.startMissedReviewMode = function() {
+    if (todayMissedIds.length === 0) return;
+    isMissedReviewMode = true;
+    isReviewMode = false;
+    roundDeck = [];
+    document.getElementById('missed-review-btn').style.display = 'none';
+    alert(`오늘 틀렸던 문장 ${todayMissedIds.length}개를 다시 풀어봅니다!`);
+    initGame();
+}
+
+function updateMissedReviewBadge() {
+    const btn = document.getElementById('missed-review-btn');
+    if (!btn) return;
+    if (todayMissedIds.length > 0 && !isMissedReviewMode) {
+        btn.style.display = 'block';
+        btn.textContent = `🔁 오늘 틀린 문장 ${todayMissedIds.length}개 — 다시 풀기`;
+    } else {
+        btn.style.display = 'none';
     }
 }
 
@@ -1983,18 +2040,31 @@ function aiSegmenter(sentence) {
 
 // 🎯 메인 게임 초기화 로직 (연속 출제 완벽 차단 적용)
 function initGame() {
-    isLockingNext = false; currentWrongCount = 0; builtWords = []; targetWords = []; poolWords = [];
+    isLockingNext = false; currentWrongCount = 0; missedThisItem = false; builtWords = []; targetWords = []; poolWords = [];
     const exBox = document.getElementById('example-box'); if (exBox) exBox.innerHTML = '';
     document.getElementById('stt-preview').innerText = "🎙️ 다음 문장입니다. 이어서 편하게 말씀하세요...";
 
-    let activePool = isReviewMode ? reviewPool : db.filter(item => (item.count || 0) < 20);
+    let activePool;
+    if (isMissedReviewMode) {
+        activePool = db.filter(item => todayMissedIds.includes(item.id));
+    } else if (isReviewMode) {
+        activePool = reviewPool;
+    } else {
+        activePool = db.filter(item => (item.count || 0) < 20);
+    }
 
-    // 🏷️ 선택한 카테고리들로 출제 범위 좁히기 (비었으면 전체)
-    if (selectedCategories.length > 0) {
+    // 🏷️ 선택한 카테고리들로 출제 범위 좁히기 (비었으면 전체) — 오늘 틀린 문장 모드는 카테고리 무시
+    if (selectedCategories.length > 0 && !isMissedReviewMode) {
         activePool = activePool.filter(item => selectedCategories.includes(getCategory(item)));
     }
 
-    if (activePool.length === 0 && !isReviewMode) {
+    if (activePool.length === 0 && isMissedReviewMode) {
+        isMissedReviewMode = false;
+        alert("🎉 오늘 틀렸던 문장을 모두 다시 풀었어요!");
+        roundDeck = [];
+        initGame();
+        return;
+    } else if (activePool.length === 0 && !isReviewMode) {
         const label = selectedCategories.length === 0 ? '모든 문장' : `선택한 카테고리`;
         document.getElementById('kor-meaning').innerText = `🎉 ${label} 정복 완료!`;
         roundDeck = [];
@@ -2013,13 +2083,7 @@ function initGame() {
     // 🎲 라운드 덱 방식: 덱이 비었으면 전체 문장으로 새 라운드 시작
     if (roundDeck.length === 0) {
         roundNumber++;
-        // Fisher-Yates 셔플로 전체 문장을 랜덤 순서로 덱에 쌓기
-        let shuffled = [...activePool];
-        for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-        }
-        roundDeck = shuffled;
+        roundDeck = buildWeightedDeck(activePool);
     }
     // 연속 출제 방지: 직전 문장과 같으면 덱 맨 뒤로 보내기
     if (roundDeck.length > 1 && roundDeck[0].id === lastSolvedId) {
@@ -2039,7 +2103,7 @@ function initGame() {
     const remEl = document.getElementById('cat-remaining');
     if (remEl) {
         const remainCount = activePool.length;
-        remEl.innerText = (isReviewMode ? '복습 ' : '') + remainCount + '개 남음';
+        remEl.innerText = (isMissedReviewMode ? '오늘틀린 ' : isReviewMode ? '복습 ' : '') + remainCount + '개 남음';
     }
     
     document.getElementById('msg-box').innerHTML = "";
@@ -2051,7 +2115,30 @@ function initGame() {
     renderVocabNotes(db[currentIdx].eng);
 
     renderBuilder(); renderPool();
+
+    // 🔊 문제가 나올 때 한글 뜻을 읽어줌 (설정에서 끌 수 있음)
+    if (isKorReadAloudOn()) {
+        listenSpeakKor(db[currentIdx].kor, () => {});
+    }
+
     if (isListening) { document.getElementById('stt-preview').style.display = 'block'; safeStartRecognition(); }
+}
+
+// 🎲 약점 가중 출제: wrong_count가 높을수록 라운드 덱에 더 많이 끼워 넣어 더 자주 만나게 함
+//    (예: wrong_count 0~1 → 1장, 2~4 → 2장, 5+ → 3장씩 덱에 들어감)
+function buildWeightedDeck(pool) {
+    let weighted = [];
+    pool.forEach(item => {
+        const wc = item.wrong_count || 0;
+        const copies = wc >= 5 ? 3 : wc >= 2 ? 2 : 1;
+        for (let n = 0; n < copies; n++) weighted.push(item);
+    });
+    // Fisher-Yates 셔플로 랜덤 순서 섞기
+    for (let i = weighted.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [weighted[i], weighted[j]] = [weighted[j], weighted[i]];
+    }
+    return weighted;
 }
 
 function renderBuilder() {
@@ -2094,6 +2181,9 @@ async function selectWord(word, btnEl) {
         if (builtWords.every(w => w !== null)) { handleSuccess(); }
     } else {
         currentWrongCount++;
+        missedThisItem = true;
+        if (!todayMissedIds.includes(db[currentIdx].id)) todayMissedIds.push(db[currentIdx].id);
+        updateMissedReviewBadge();
 
         // ❌✅ 누른 단어는 빨갛게 흔들고, 진짜 정답 단어는 초록색으로 깜빡여서 위치를 알려줌
         flashWrongAndCorrect(btnEl, targetWords[firstEmptyIdx]);
@@ -2102,6 +2192,7 @@ async function selectWord(word, btnEl) {
             // 5번 틀리면 정답 읽어주고 자동으로 다음 문제
             document.getElementById('msg-box').innerHTML = `<span class='error'>❌ 정답:</span><br><span class='show-answer-flash'><b>${db[currentIdx].eng}</b></span>`;
             speakSentence(db[currentIdx].eng);
+            recordWrongCount(db[currentIdx]); // 약점 가중 출제를 위해 틀린 횟수 영구 저장
             isLockingNext = true;
             setTimeout(() => { isLockingNext = false; initGame(); }, 2800);
         } else if (currentWrongCount >= 3) {
@@ -2112,6 +2203,14 @@ async function selectWord(word, btnEl) {
             document.getElementById('msg-box').innerHTML = `<span class='error'>❌ 순서가 조금 틀렸어요!</span>`;
         }
     }
+}
+
+// 📈 틀린 횟수를 Firebase에 영구 저장 (약점 가중 출제용) — 화면 표시용 낙관적 갱신 + increment로 서버 측 원자적 갱신
+async function recordWrongCount(item) {
+    item.wrong_count = (item.wrong_count || 0) + 1;
+    try {
+        await setDoc(doc(sentenceRef, item.id), { wrong_count: increment(1) }, { merge: true });
+    } catch (e) { console.error('wrong_count 저장 실패:', e); }
 }
 
 function flashWrongAndCorrect(wrongBtnEl, correctWord) {
@@ -2181,6 +2280,19 @@ async function sendToMasterRoom() {
 
 async function handleSuccess() {
     isLockingNext = true; lastSolvedId = db[currentIdx].id; 
+
+    // 📈 이번 문제에서 한 번이라도 틀렸었는데 5회 미만(자동 패스 전)에 맞췄다면 여기서 wrong_count 저장
+    //    (5회 이상 틀린 경우는 selectWord에서 이미 저장했으므로 중복 저장 방지)
+    if (missedThisItem && currentWrongCount < 5) {
+        await recordWrongCount(db[currentIdx]);
+    }
+
+    // 🔁 오늘 틀린 문장 다시 풀기 모드에서 맞췄다면 목록에서 제거
+    if (isMissedReviewMode) {
+        todayMissedIds = todayMissedIds.filter(id => id !== db[currentIdx].id);
+        roundDeck = roundDeck.filter(item => item.id !== db[currentIdx].id);
+        updateMissedReviewBadge();
+    }
     
     if (isReviewMode) {
         db[currentIdx].last_reviewed = Date.now();
@@ -2372,7 +2484,7 @@ async function deleteSentence(id) {
 window.exportData = function() {
     const data = db.map(i => ({
         id: i.id, eng: i.eng, kor: i.kor, category: getCategory(i),
-        count: i.count || 0, last_reviewed: i.last_reviewed || 0,
+        count: i.count || 0, last_reviewed: i.last_reviewed || 0, wrong_count: i.wrong_count || 0,
         ex_eng: i.ex_eng || '', ex_kor: i.ex_kor || '', ex_ctx: i.ex_ctx || '', note: i.note || ''
     }));
     const payload = { exported_at: new Date().toISOString(), count: data.length, sentences: data };
@@ -2402,6 +2514,7 @@ window.importData = async function(ev) {
                 eng: s.eng, kor: s.kor, category: s.category || '미분류',
                 count: typeof s.count === 'number' ? s.count : 0, weight: 5,
                 last_reviewed: s.last_reviewed || Date.now(),
+                wrong_count: typeof s.wrong_count === 'number' ? s.wrong_count : 0,
                 ex_eng: s.ex_eng || '', ex_kor: s.ex_kor || '', ex_ctx: s.ex_ctx || '', note: s.note || ''
             }, { merge: true });
             n++;
@@ -2435,10 +2548,13 @@ function renderLists() {
 
         let li = document.createElement('li'); li.className = "list-item";
         const hasEx = item.ex_eng ? '💬 ' : '';
+        const wc = item.wrong_count || 0;
+        const weakBadge = wc > 0 ? `<div class="weak-badge">⚠️ ${wc}회 틀림</div>` : '';
         li.innerHTML = `
             <div class="text-group"><b>${hasEx}${item.eng}</b><small>${item.kor}</small></div>
             <div class="btn-group">
                 <div class="${isMaster ? 'master-badge' : 'count-badge'}">${isMaster ? '🔥 마스터' : c + '회'}</div>
+                ${weakBadge}
                 <button class="cat-btn" onclick="editCategory('${item.id}')">🏷️ ${getCategory(item)}</button>
                 <button class="move-btn" style="color:#10b981;border-color:#10b981;" onclick="listenOne('${item.id}')">🔊</button>
                 ${isMaster
@@ -3099,6 +3215,10 @@ function listenInCats(i) {
 
 // ── 듣기 옵션: 화면 꺼짐 방지 + 백그라운드 재생 ──
 function wakeLockEnabled() { try { return localStorage.getItem('wake_lock_on') === '1'; } catch (e) { return false; } }
+function isKorReadAloudOn() { try { return localStorage.getItem('kor_read_aloud') === '1'; } catch (e) { return false; } }
+window.saveKorReadAloud = function() {
+    try { localStorage.setItem('kor_read_aloud', document.getElementById('kor-read-aloud').checked ? '1' : '0'); } catch (e) {}
+};
 function bgListenEnabled() { try { return localStorage.getItem('bg_listen_on') === '1'; } catch (e) { return false; } }
 window.saveListenOptions = function() {
     try {
