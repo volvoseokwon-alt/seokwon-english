@@ -348,24 +348,49 @@
         /* 🖥️ 듣기 전체화면 오버레이 */
         #listen-fullscreen-overlay {
             display: none; position: fixed; inset: 0; z-index: 999;
+            width: 100vw; height: 100vh; width: 100dvw; height: 100dvh;
             background: linear-gradient(165deg, #4338ca 0%, #6d28d9 55%, #312e81 100%);
-            color: white; flex-direction: column; align-items: center; justify-content: center;
-            padding: 32px 24px; text-align: center;
+            color: white; box-sizing: border-box; overflow: hidden;
         }
         #listen-fullscreen-overlay.open { display: flex; }
-        .lfs-close-btn { position: absolute; top: env(safe-area-inset-top, 18px); right: 18px; width: 42px; height: 42px; border: none; border-radius: 50%; background: rgba(255,255,255,0.15); color: white; font-size: 1.3rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .lfs-close-btn { position: absolute; top: max(env(safe-area-inset-top, 14px), 14px); right: max(env(safe-area-inset-right, 14px), 14px); width: 42px; height: 42px; border: none; border-radius: 50%; background: rgba(255,255,255,0.15); color: white; font-size: 1.3rem; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 2; flex-shrink: 0; }
         .lfs-close-btn:active { background: rgba(255,255,255,0.28); transform: scale(0.93); }
-        .lfs-disc { width: 132px; height: 132px; background: rgba(255,255,255,0.12); border: 2px solid rgba(255,255,255,0.25); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3.6rem; margin-bottom: 32px; flex-shrink: 0; }
+
+        /* 세로 모드 (기본): 위→아래로 쌓는 레이아웃, 화면 전체를 꽉 채움 */
+        .lfs-body {
+            width: 100%; height: 100%; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: max(env(safe-area-inset-top, 24px), 24px) 24px max(env(safe-area-inset-bottom, 24px), 24px);
+            box-sizing: border-box; text-align: center; gap: 0;
+        }
+        .lfs-left { display: flex; flex-direction: column; align-items: center; width: 100%; }
+        .lfs-right { display: flex; flex-direction: column; align-items: center; width: 100%; }
+        .lfs-disc { width: 19vh; height: 19vh; min-width: 80px; min-height: 80px; max-width: 150px; max-height: 150px; background: rgba(255,255,255,0.12); border: 2px solid rgba(255,255,255,0.25); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3.2rem; margin-bottom: 4vh; flex-shrink: 0; }
         .lfs-disc.spinning { animation: disc-spin 3s linear infinite; }
-        .lfs-eng { font-size: 1.55rem; font-weight: 800; line-height: 1.4; max-width: 90%; margin-bottom: 14px; }
-        .lfs-kor { font-size: 1.05rem; color: rgba(255,255,255,0.78); max-width: 88%; margin-bottom: 18px; line-height: 1.5; }
-        .lfs-progress { font-size: 0.85rem; color: rgba(255,255,255,0.55); margin-bottom: 34px; }
-        .lfs-controls { display: flex; gap: 12px; width: 100%; max-width: 360px; margin-bottom: 22px; }
+        .lfs-eng { font-size: clamp(1.8rem, 7.2vw, 3.4rem); font-weight: 800; line-height: 1.32; max-width: 94%; margin-bottom: 18px; }
+        .lfs-kor { font-size: clamp(1rem, 3.6vw, 1.3rem); color: rgba(255,255,255,0.78); max-width: 90%; margin-bottom: 20px; line-height: 1.5; }
+        .lfs-progress { font-size: 0.88rem; color: rgba(255,255,255,0.55); margin-bottom: 4vh; }
+        .lfs-controls { display: flex; gap: 12px; width: 100%; max-width: 380px; margin-bottom: 22px; flex-shrink: 0; }
         .lfs-btn { flex: 1; padding: 16px 8px; border: none; border-radius: 14px; background: rgba(255,255,255,0.16); color: white; font-weight: bold; font-size: 0.95rem; cursor: pointer; transition: transform 0.1s, opacity 0.1s; }
         .lfs-btn:active { transform: scale(0.95); opacity: 0.85; }
         .lfs-btn.lfs-play { background: white; color: #4338ca; flex: 1.4; }
-        .lfs-master-btn { padding: 13px 22px; border: 1px dashed rgba(255,255,255,0.5); border-radius: 12px; background: rgba(255,255,255,0.08); color: white; font-weight: bold; font-size: 0.88rem; cursor: pointer; transition: transform 0.1s, opacity 0.1s, background 0.15s; }
+        .lfs-master-btn { padding: 13px 22px; border: 1px dashed rgba(255,255,255,0.5); border-radius: 12px; background: rgba(255,255,255,0.08); color: white; font-weight: bold; font-size: 0.88rem; cursor: pointer; transition: transform 0.1s, opacity 0.1s, background 0.15s; flex-shrink: 0; }
         .lfs-master-btn:active { transform: scale(0.96); background: rgba(255,255,255,0.2); }
+
+        /* 가로 모드: 좌측 디스크+컨트롤 / 우측 텍스트로 화면을 가득 채워 사용 */
+        @media (orientation: landscape) {
+            .lfs-body {
+                flex-direction: row; justify-content: center; align-items: center; gap: 4vw;
+                padding: max(env(safe-area-inset-top, 16px), 16px) max(env(safe-area-inset-right, 28px), 28px) max(env(safe-area-inset-bottom, 16px), 16px) max(env(safe-area-inset-left, 28px), 28px);
+            }
+            .lfs-left { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 30vw; max-width: 280px; }
+            .lfs-right { display: flex; flex-direction: column; align-items: flex-start; text-align: left; flex: 1; min-width: 0; }
+            .lfs-disc { width: 16vh; height: 16vh; max-width: 120px; max-height: 120px; margin-bottom: 3vh; font-size: 2.6rem; }
+            .lfs-eng { font-size: clamp(1.9rem, 5.2vw, 3.8rem); max-width: 100%; text-align: left; margin-bottom: 16px; }
+            .lfs-kor { max-width: 100%; text-align: left; font-size: clamp(1rem, 2.4vw, 1.35rem); }
+            .lfs-progress { text-align: left; margin-bottom: 3vh; }
+            .lfs-controls { max-width: 100%; margin-bottom: 18px; }
+        }
         .lp-repeat { background: rgba(255,255,255,0.2); color: white; }
         .lp-repeat.on { background: #fbbf24; color: #78350f; }
         .lp-play { background: white; color: var(--primary-color); }
@@ -532,16 +557,22 @@
         <!-- 🖥️ 듣기 전체화면 오버레이 -->
         <div id="listen-fullscreen-overlay">
             <button class="lfs-close-btn" onclick="closeListenFullscreen()" aria-label="전체화면 닫기">✕</button>
-            <div class="lfs-disc" id="lfs-disc">🎧</div>
-            <div class="lfs-eng" id="lfs-eng">재생 대기 중...</div>
-            <div class="lfs-kor" id="lfs-kor"></div>
-            <div class="lfs-progress" id="lfs-progress"></div>
-            <div class="lfs-controls">
-                <button class="lfs-btn" id="lfs-repeat-btn" onclick="toggleRepeat()">🔁 반복 ON</button>
-                <button class="lfs-btn lfs-play" id="lfs-play-btn" onclick="toggleListenMode()">▶ 재생</button>
-                <button class="lfs-btn" onclick="stopListenMode()">⏹ 정지</button>
+            <div class="lfs-body">
+                <div class="lfs-left">
+                    <div class="lfs-disc" id="lfs-disc">🎧</div>
+                    <div class="lfs-controls">
+                        <button class="lfs-btn" id="lfs-repeat-btn" onclick="toggleRepeat()">🔁 반복 ON</button>
+                        <button class="lfs-btn lfs-play" id="lfs-play-btn" onclick="toggleListenMode()">▶ 재생</button>
+                        <button class="lfs-btn" onclick="stopListenMode()">⏹ 정지</button>
+                    </div>
+                    <button class="lfs-master-btn" id="lfs-master-btn" onclick="sendListenItemToMaster()">🌌 외운 문장룸으로 보내기</button>
+                </div>
+                <div class="lfs-right">
+                    <div class="lfs-eng" id="lfs-eng">재생 대기 중...</div>
+                    <div class="lfs-kor" id="lfs-kor"></div>
+                    <div class="lfs-progress" id="lfs-progress"></div>
+                </div>
             </div>
-            <button class="lfs-master-btn" id="lfs-master-btn" onclick="sendListenItemToMaster()">🌌 이 문장 외운 문장룸으로 보내기</button>
         </div>
 
         <!-- ── 탭3: 문장 관리 ── -->
