@@ -166,14 +166,25 @@
         }
         #shadow-fullscreen-overlay.open { display: flex; }
         .sfs-count-badge { position: absolute; top: max(env(safe-area-inset-top, 14px), 14px); left: max(env(safe-area-inset-left, 14px), 14px); background: rgba(255,255,255,0.15); color: #fff; font-size: 0.8rem; font-weight: 700; padding: 7px 12px; border-radius: 20px; z-index: 2; }
-        .sfs-body { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: max(env(safe-area-inset-top, 24px), 24px) 20px max(env(safe-area-inset-bottom, 24px), 24px); box-sizing: border-box; overflow-y: auto; }
-        #shadow-fullscreen-overlay #shadow-main-area { width: 100%; max-width: 480px; }
+        .sfs-body {
+            width: 100%; height: 100%; box-sizing: border-box; overflow: hidden;
+            display: flex; flex-direction: column;
+            padding: max(env(safe-area-inset-top, 56px), 56px) 16px max(env(safe-area-inset-bottom, 16px), 16px);
+        }
+        /* shadow-main-area 자체를 세로 flex 컨테이너로 만들어 카드가 남는 공간을 모두 차지하게 함 */
+        #shadow-fullscreen-overlay #shadow-main-area { width: 100%; max-width: 480px; margin: 0 auto; height: 100%; display: flex; flex-direction: column; min-height: 0; }
         #shadow-fullscreen-overlay .cat-filter-bar { display: none; } /* 전체화면에서는 카테고리 필터/카운트 숨김 - 문장에만 집중 */
-        #shadow-fullscreen-overlay .shadow-dir-badge { background: rgba(255,255,255,0.18); color: #fff; }
-        #shadow-fullscreen-overlay .shadow-sentence-box { background: rgba(255,255,255,0.97); }
-        #shadow-fullscreen-overlay .shadow-sentence-box-inner { font-size: clamp(1.6rem, 6vw, 2.1rem); }
-        #shadow-fullscreen-overlay .stt-preview { color: rgba(255,255,255,0.85); }
-        #shadow-fullscreen-overlay #shadow-msg-box { color: #fff; }
+        #shadow-fullscreen-overlay .shadow-dir-badge { background: rgba(255,255,255,0.18); color: #fff; flex-shrink: 0; margin: 0 0 12px; }
+        #shadow-fullscreen-overlay .shadow-timer-track { flex-shrink: 0; margin: 0 0 10px; }
+        /* 문장 카드가 화면의 남는 공간을 전부 채움 */
+        #shadow-fullscreen-overlay .shadow-sentence-box { background: rgba(255,255,255,0.97); flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; margin: 0 0 14px; }
+        #shadow-fullscreen-overlay .shadow-sentence-box-inner { font-size: clamp(1.8rem, 7vw, 2.6rem); overflow-y: auto; }
+        #shadow-fullscreen-overlay .shadow-hint-row { flex-shrink: 0; margin-top: 24px; font-size: 1.05rem; }
+        #shadow-fullscreen-overlay .shadow-result-actions { flex-shrink: 0; }
+        #shadow-fullscreen-overlay .stt-preview { color: rgba(255,255,255,0.85); flex-shrink: 0; }
+        #shadow-fullscreen-overlay .stt-preview { color: rgba(255,255,255,0.85); flex-shrink: 0; margin: 0 0 8px; }
+        #shadow-fullscreen-overlay #shadow-msg-box { color: #fff; flex-shrink: 0; min-height: 20px; padding: 4px 0; }
+        #shadow-fullscreen-overlay .shadow-action-area { flex-shrink: 0; padding: 0; margin-top: 10px; }
         /* 📝 단어·숙어 노트 */
         .vocab-box { display: none; margin-top: 10px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 10px 12px; }
         .vocab-title { font-size: 0.72rem; font-weight: 800; color: #b45309; letter-spacing: 0.03em; margin-bottom: 6px; }
