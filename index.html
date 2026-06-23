@@ -19,6 +19,82 @@
             --mic-color: #dc2626;
             --mic-active: #b91c1c;
             --review-color: #f59e0b;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --input-bg: #ffffff;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #0f172a;
+                --card-bg: #1e293b;
+                --text-color: #e2e8f0;
+                --text-muted: #94a3b8;
+                --border-color: #334155;
+                --input-bg: #1e293b;
+                --primary-color: #6366f1;
+                --primary-active: #818cf8;
+                --success-color: #34d399;
+                --error-color: #f87171;
+                --answer-color: #38bdf8;
+                --skip-color: #94a3b8;
+                --skip-active: #cbd5e1;
+                --room-color: #a78bfa;
+                --review-color: #fbbf24;
+            }
+            body { color: var(--text-color); }
+            .app-wrapper { background: var(--bg-color); color: var(--text-color); }
+            .app-card { background: var(--card-bg); box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+            /* 카드/박스 배경 */
+            .quiz-box, .shadow-sentence-box, .vocab-box, .setting-form, .list-item, .listen-item { background: var(--card-bg) !important; border-color: var(--border-color) !important; color: var(--text-color); }
+            .stat-bar { background: var(--card-bg); border-color: var(--border-color); }
+            /* 입력 필드 */
+            .setting-form input, .setting-form select, .setting-form textarea { background: var(--input-bg); color: var(--text-color); border-color: var(--border-color); }
+            /* 탭바 */
+            .tab-bar { background: var(--card-bg); border-color: var(--border-color); }
+            .tab-btn { color: var(--text-muted); }
+            .tab-btn.active { color: var(--primary-color); background: rgba(99,102,241,0.15); }
+            /* 필터바 */
+            .cat-filter-bar { background: rgba(99,102,241,0.1); border-color: var(--border-color); }
+            .cat-trigger { background: var(--card-bg) !important; color: var(--text-color) !important; border-color: var(--border-color) !important; }
+            /* 필터 모달 */
+            #study-filter-card { background: var(--card-bg); }
+            .sf-item { background: var(--bg-color); border-color: var(--border-color); color: var(--text-color); }
+            /* 문장 빌더/단어풀 */
+            .word-pool { border-color: var(--border-color); }
+            .word-btn { background: var(--card-bg); color: var(--text-color); border-color: var(--border-color); }
+            .sentence-builder { background: var(--bg-color); border-color: var(--border-color); }
+            /* 쉐도잉 카드 */
+            .shadow-sentence-box-inner .sw-word { color: #64748b; }
+            .shadow-sentence-box-inner .sw-word.sw-said { color: var(--primary-active); }
+            .shadow-sentence-box-inner .sw-blockword { background: #475569; }
+            .shadow-hint-row { color: var(--text-muted); }
+            .shadow-hint-label { background: #78350f; color: #fde68a; }
+            /* 전체화면 (다크모드에서도 배경 투명 유지 — 카드 테두리 없이 글자만) */
+            #shadow-fullscreen-overlay { background: var(--bg-color); color: var(--text-color); }
+            #shadow-fullscreen-overlay .shadow-sentence-box { background: transparent !important; }
+            #shadow-fullscreen-overlay .lfs-close-btn { background: var(--card-bg); color: var(--text-muted); }
+            .sfs-count-badge { background: var(--card-bg); color: var(--primary-active); }
+            #shadow-fullscreen-overlay .shadow-dir-badge { background: rgba(99,102,241,0.2); color: var(--primary-active); }
+            /* STT 미리보기 */
+            .stt-preview { background: var(--card-bg) !important; color: var(--text-muted) !important; border-color: var(--border-color) !important; }
+            /* 듣기 전체화면 */
+            .lfs-eng, .lfs-kor { color: var(--text-color); }
+            /* 미니바 */
+            .mini-bar { background: var(--card-bg); border-color: var(--border-color); }
+            /* 스크롤 컨테이너 */
+            .scroll-container { scrollbar-color: var(--border-color) transparent; }
+            /* 달력 */
+            .cal-grid .cal-cell { background: var(--card-bg); color: var(--text-color); border-color: var(--border-color); }
+            /* 결과 버튼 */
+            .shadow-result-btn { background: rgba(99,102,241,0.15); color: var(--primary-active); }
+            /* 일시정지 오버레이 */
+            .shadow-pause-overlay { background: rgba(15,23,42,0.85); color: var(--text-muted); }
+            /* 기타 흰 배경 요소들 일괄 처리 */
+            .header, .cat-progress-panel, .ai-analysis-text, .ai-rec-item, .ai-keyword-input, .cal-sum-item, .shadow-fs-trigger, #cat-picker-card, .lfs-btn.lfs-play, .lp-play, .word-btn, #study-cat-filter, .listen-scope-btn, .start-btn { background: var(--card-bg) !important; color: var(--text-color); border-color: var(--border-color) !important; }
+            .header { border-bottom-color: var(--border-color) !important; }
+            .shadow-sentence-box { box-shadow: none !important; }
         }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
@@ -131,7 +207,7 @@
         .shadow-sentence-box-inner .sw-word { color: #cbd5e1; transition: color 0.15s; }
         .shadow-sentence-box-inner .sw-word.sw-said { color: var(--primary-active); }
         .shadow-sentence-box-inner.is-done .sw-word { color: var(--success-color) !important; }
-        .shadow-sentence-box-inner .sw-blockword { display: inline-block; min-width: 1.4em; background: #cbd5e1; border-radius: 5px; color: transparent; user-select: none; vertical-align: middle; line-height: 1.15; transition: background 0.15s, transform 0.1s; cursor: pointer; }
+        .shadow-sentence-box-inner .sw-blockword { display: inline-block; min-width: 1.4em; min-height: 1em; background: #cbd5e1; border-radius: 5px; color: transparent; user-select: none; vertical-align: middle; line-height: 1.15; transition: background 0.15s, transform 0.1s; cursor: pointer; -webkit-tap-highlight-color: rgba(99,102,241,0.3); touch-action: manipulation; border: none; padding: 2px 4px; font: inherit; font-size: inherit; font-weight: inherit; }
         .shadow-sentence-box-inner .sw-blockword:active { transform: scale(0.92); }
         .shadow-sentence-box-inner.is-done .sw-blockword { background: transparent !important; color: var(--success-color) !important; box-shadow: inset 0 0 0 9999px rgba(34,197,94,0.15); padding: 0 2px; cursor: default; }
         .shadow-hint-row { margin-top: 14px; font-size: 0.95rem; color: #475569; }
@@ -161,12 +237,14 @@
         #shadow-fullscreen-overlay {
             display: none; position: fixed; inset: 0; z-index: 999;
             width: 100vw; height: 100vh; width: 100dvw; height: 100dvh;
-            background: #ffffff;
-            color: #1e293b; box-sizing: border-box; overflow: hidden;
+            background: var(--bg-color);
+            color: var(--text-color); box-sizing: border-box; overflow: hidden;
         }
         #shadow-fullscreen-overlay.open { display: flex; }
-        #shadow-fullscreen-overlay .lfs-close-btn { background: #f1f5f9; color: #475569; }
-        .sfs-count-badge { position: absolute; top: max(env(safe-area-inset-top, 12px), 12px); left: max(env(safe-area-inset-left, 14px), 14px); background: #eef2ff; color: var(--primary-active); font-size: 0.8rem; font-weight: 700; padding: 7px 12px; border-radius: 20px; z-index: 2; }
+        #shadow-fullscreen-overlay .lfs-close-btn { background: var(--border-color); color: var(--text-muted); }
+        .sfs-header-left { position: absolute; top: max(env(safe-area-inset-top, 12px), 12px); left: max(env(safe-area-inset-left, 14px), 14px); display: flex; gap: 6px; align-items: center; z-index: 2; }
+        .sfs-count-badge { background: var(--card-bg); color: var(--primary-active); font-size: 0.8rem; font-weight: 700; padding: 7px 12px; border-radius: 20px; }
+        .sfs-cat-btn { background: var(--card-bg); color: var(--primary-active); border: 1px solid var(--border-color); font-size: 0.75rem; font-weight: 700; padding: 7px 12px; border-radius: 20px; cursor: pointer; white-space: nowrap; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
         .sfs-body {
             width: 100%; height: 100%; box-sizing: border-box; overflow: hidden;
             display: flex; flex-direction: column;
@@ -174,10 +252,10 @@
         }
         #shadow-fullscreen-overlay #shadow-main-area { width: 100%; max-width: 900px; margin: 0 auto; height: 100%; display: flex; flex-direction: column; min-height: 0; }
         #shadow-fullscreen-overlay .cat-filter-bar { display: none; }
-        #shadow-fullscreen-overlay .shadow-dir-badge { background: #ede9fe; color: var(--primary-active); flex-shrink: 0; margin: 0 0 8px; }
+        #shadow-fullscreen-overlay .shadow-dir-badge { background: rgba(99,102,241,0.12); color: var(--primary-active); flex-shrink: 0; margin: 0 0 8px; }
         #shadow-fullscreen-overlay .shadow-timer-track { flex-shrink: 0; margin: 0 0 8px; }
         /* 문장 영역이 남는 공간을 전부 차지, 카드 테두리/배경 없이 글자만 크게 */
-        #shadow-fullscreen-overlay .shadow-sentence-box { background: transparent; box-shadow: none; flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; margin: 0; padding: 8px; overflow: hidden; }
+        #shadow-fullscreen-overlay .shadow-sentence-box { background: transparent; box-shadow: none; flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; margin: 0; padding: 8px; overflow: visible; }
         #shadow-fullscreen-overlay .shadow-sentence-box-inner { font-size: clamp(2.2rem, 10vw, 5rem); line-height: 1.45; width: 100%; overflow-y: auto; max-height: 100%; }
         #shadow-fullscreen-overlay .shadow-hint-row { flex-shrink: 0; margin-top: 20px; font-size: clamp(1rem, 3.5vw, 1.5rem); }
         #shadow-fullscreen-overlay .shadow-result-actions { flex-shrink: 0; }
@@ -686,7 +764,10 @@
         <!-- 🖥️ 쉐도잉 전체화면 오버레이 (몰입 모드) -->
         <div id="shadow-fullscreen-overlay">
             <button class="lfs-close-btn" onclick="closeShadowFullscreen()" aria-label="전체화면 닫기">✕</button>
-            <div class="sfs-count-badge" id="shadow-fs-count-badge">🗣️ 0회 완료</div>
+            <div class="sfs-header-left">
+                <div class="sfs-count-badge" id="shadow-fs-count-badge">🗣️ 0회 완료</div>
+                <button class="sfs-cat-btn" id="shadow-fs-cat-btn" onclick="openShadowFilter()">📚 전체</button>
+            </div>
             <div class="sfs-body" id="shadow-fs-mount"><!-- shadow-main-area가 여기로 이동됨 --></div>
         </div>
 
@@ -2954,11 +3035,14 @@ function updateManageTriggerLabel() {
 }
 
 function updateShadowTriggerLabel() {
+    let label;
+    if (shadowCategories.length === 0) label = `📚 전체 (${db.length}개)`;
+    else if (shadowCategories.length === 1) label = `🏷️ ${shadowCategories[0]}`;
+    else label = `🏷️ ${shadowCategories[0]} 외 ${shadowCategories.length - 1}개`;
     const btn = document.getElementById('shadow-cat-trigger');
-    if (!btn) return;
-    if (shadowCategories.length === 0) btn.textContent = `📚 전체 (${db.length}개)`;
-    else if (shadowCategories.length === 1) btn.textContent = `🏷️ ${shadowCategories[0]}`;
-    else btn.textContent = `🏷️ ${shadowCategories[0]} 외 ${shadowCategories.length - 1}개`;
+    if (btn) btn.textContent = label;
+    const fsBtn = document.getElementById('shadow-fs-cat-btn');
+    if (fsBtn) fsBtn.textContent = label;
 }
 
 // 개별 문장 카테고리 수정 → 팝업으로 목록에서 바로 선택
@@ -3754,14 +3838,26 @@ function renderShadowSentence() {
     const inner = document.getElementById('shadow-sentence-box');
     const card = document.getElementById('shadow-sentence-card');
     if (!inner || !shadowWordStates.length) { if (inner) inner.innerHTML = ''; return; }
+    // 블록 클릭을 이벤트 위임으로 처리 (iOS Safari에서 동적 innerHTML의 인라인 onclick이 터치로 안 먹는 문제 회피)
+    if (!inner.dataset.tapBound) {
+        const handler = (e) => {
+            const blk = e.target.closest('.sw-blockword');
+            if (!blk || !inner.contains(blk)) return;
+            const idx = parseInt(blk.getAttribute('data-idx'), 10);
+            if (!isNaN(idx)) { e.preventDefault(); tapRevealShadowWord(idx); }
+        };
+        inner.addEventListener('click', handler);
+        inner.addEventListener('touchend', handler);
+        inner.dataset.tapBound = '1';
+    }
     inner.classList.toggle('is-done', shadowAnsweredAll);
     if (card) card.classList.toggle('is-done', shadowAnsweredAll);
     inner.innerHTML = shadowWordStates.map((ws, idx) => {
         if (!ws.isWord) return escapeHtml(ws.text);
         if (ws.blocked && !ws.said && !shadowAnsweredAll) {
-            // 아직 안 맞힌 가려진 단어만 블록으로 표시
+            // 아직 안 맞힌 가려진 단어: button으로 렌더링 (iOS Safari 터치 호환)
             const blockLen = Math.max(2, Math.min(6, ws.text.length));
-            return `<span class="sw-blockword" onclick="tapRevealShadowWord(${idx})">${'\u00A0'.repeat(blockLen)}</span>`;
+            return `<button class="sw-blockword" data-idx="${idx}" type="button">${'\u00A0'.repeat(blockLen)}</button>`;
         }
         // 맞혔거나(said) 안 가려진 단어는 곧바로 글자로 표시
         return `<span class="sw-word${ws.said ? ' sw-said' : ''}">${escapeHtml(ws.text)}</span>`;
@@ -3782,7 +3878,20 @@ function pickShadowItem() {
         const filtered = pool.filter(i => i.id !== shadowItem.id);
         if (filtered.length > 0) pool = filtered;
     }
-    return pool[Math.floor(Math.random() * pool.length)];
+    // 우선순위: 1) 덜 연습한 문장(count 낮을수록)  2) 틀린 문장(wrong_count 높을수록)  3) 랜덤
+    const maxCount = Math.max(...pool.map(i => i.count || 0), 1);
+    const weights = pool.map(i => {
+        const countScore = (maxCount - (i.count || 0) + 1);        // count 낮을수록 높은 점수
+        const wrongScore = (i.wrong_count || 0) + 1;               // wrong_count 높을수록 높은 점수
+        return countScore * 3 + wrongScore;                         // count 가중치를 3배로
+    });
+    const totalWeight = weights.reduce((a, b) => a + b, 0);
+    let rand = Math.random() * totalWeight;
+    for (let i = 0; i < pool.length; i++) {
+        rand -= weights[i];
+        if (rand <= 0) return pool[i];
+    }
+    return pool[pool.length - 1];
 }
 
 // 표준 웹음성(SpeechSynthesis)만 사용 — AI TTS는 쓰지 않음
