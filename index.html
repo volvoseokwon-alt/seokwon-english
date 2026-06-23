@@ -124,11 +124,21 @@
 
         /* 🗣️ 쉐도잉 탭 */
         .shadow-dir-badge { align-self: center; background: #ede9fe; color: var(--primary-active); font-weight: bold; font-size: 0.85rem; padding: 5px 14px; border-radius: 20px; margin: 0 16px 10px; text-align: center; }
-        .shadow-sentence-box { background: #fff; border: 2px dashed #cbd5e0; border-radius: 12px; margin: 0 16px 12px; padding: 18px 16px; font-size: 1.15rem; font-weight: 600; color: #1e293b; line-height: 1.7; text-align: center; min-height: 60px; }
-        .shadow-sentence-box .sw-block { display: inline-block; min-width: 1.6em; background: #111827; border-radius: 4px; color: transparent; user-select: none; vertical-align: middle; line-height: 1.3; }
-        .shadow-sentence-box .sw-revealed { color: #111827; font-weight: 700; transition: color 0.15s; }
-        .shadow-sentence-box .sw-unread { color: #cbd5e1; transition: color 0.15s; }
-        .shadow-sentence-box .sw-read { color: #111827; font-weight: 700; transition: color 0.15s; }
+        .shadow-sentence-box { position: relative; background: #fff; border: none; border-radius: 16px; margin: 0 16px 12px; padding: 28px 18px 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); text-align: center; min-height: 70px; }
+        .shadow-sentence-box.is-done { background: #f0fdf6; }
+        .shadow-done-badge { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: var(--success-color); color: #fff; font-size: 1.1rem; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .shadow-sentence-box-inner { font-size: 1.5rem; font-weight: 700; line-height: 1.9; word-spacing: 3px; }
+        .shadow-sentence-box-inner .sw-word { color: #cbd5e1; transition: color 0.15s; }
+        .shadow-sentence-box-inner .sw-word.sw-said { color: var(--primary-active); }
+        .shadow-sentence-box-inner.is-done .sw-word { color: var(--success-color) !important; }
+        .shadow-sentence-box-inner .sw-blockword { display: inline-block; min-width: 1.4em; background: #cbd5e1; border-radius: 5px; color: transparent; user-select: none; vertical-align: middle; line-height: 1.15; transition: background 0.15s; }
+        .shadow-sentence-box-inner .sw-blockword.sw-said { background: var(--primary-active); }
+        .shadow-sentence-box-inner.is-done .sw-blockword { background: transparent !important; color: var(--success-color) !important; box-shadow: inset 0 0 0 9999px rgba(34,197,94,0.15); padding: 0 2px; }
+        .shadow-hint-row { margin-top: 14px; font-size: 0.95rem; color: #475569; }
+        .shadow-hint-label { background: #fde68a; color: #78350f; font-weight: 700; font-size: 0.72rem; padding: 2px 7px; border-radius: 5px; margin-right: 6px; vertical-align: middle; }
+        .shadow-result-actions { display: flex; gap: 8px; justify-content: center; margin-top: 16px; }
+        .shadow-result-btn { background: #eef2ff; color: var(--primary-active); border: none; border-radius: 20px; padding: 9px 16px; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+        .shadow-result-btn:active { transform: scale(0.96); }
         .shadow-action-area { display: flex; gap: 8px; padding: 0 16px 10px; }
         .shadow-action-area button { flex: 1; padding: 12px 6px; border: none; border-radius: 10px; font-weight: bold; font-size: 0.9rem; cursor: pointer; transition: transform 0.1s ease; }
         .shadow-action-area button:active { transform: scale(0.96); }
@@ -137,7 +147,6 @@
         #shadow-reveal-btn { background: var(--answer-color); color: #fff; }
         #shadow-next-btn { background: var(--skip-color); color: #fff; }
         #shadow-msg-box { text-align: center; font-weight: bold; padding: 4px 16px; min-height: 24px; }
-        #shadow-prompt-box { margin: 0 16px 14px; }
         .shadow-count-badge { background: #f1f5f9; color: #475569; font-size: 0.8rem; font-weight: 600; padding: 3px 10px; border-radius: 12px; margin-left: auto; }
         .shadow-timer-track { height: 6px; background: #e2e8f0; border-radius: 4px; margin: 0 16px 10px; overflow: hidden; }
         .shadow-timer-fill { height: 100%; width: 100%; background: var(--mic-color); border-radius: 4px; transform-origin: left; transition: none; }
@@ -604,13 +613,21 @@
                 <span class="shadow-count-badge" id="shadow-count-badge">🗣️ 0회 완료</span>
             </div>
             <div class="shadow-dir-badge" id="shadow-dir-badge">한국어 → 영어</div>
-            <div class="quiz-box" id="shadow-prompt-box">
-                <div id="shadow-prompt-text">시작 버튼을 눌러주세요</div>
-            </div>
             <div class="shadow-timer-track" id="shadow-timer-track" style="display:none;">
                 <div class="shadow-timer-fill" id="shadow-timer-fill"></div>
             </div>
-            <div class="shadow-sentence-box" id="shadow-sentence-box"></div>
+            <div class="shadow-sentence-box" id="shadow-sentence-card">
+                <div class="shadow-done-badge" id="shadow-done-badge" style="display:none;">✅</div>
+                <div class="shadow-sentence-box-inner" id="shadow-sentence-box"></div>
+                <div class="shadow-hint-row" id="shadow-hint-row">
+                    <span class="shadow-hint-label">힌트</span>
+                    <span class="shadow-hint-text" id="shadow-hint-text"></span>
+                </div>
+                <div class="shadow-result-actions" id="shadow-result-actions" style="display:none;">
+                    <button class="shadow-result-btn" onclick="replayShadowAudio()">🔊 모범 발음</button>
+                    <button class="shadow-result-btn" onclick="nextShadowQuestion()">🔁 다시하기</button>
+                </div>
+            </div>
             <div class="stt-preview" id="shadow-stt-preview">🗣️ 내가 발음한 내용 실시간 대기 중...</div>
             <div class="shadow-action-area">
                 <button class="speak-mode-btn" id="shadow-mic-btn" onclick="toggleShadowMic()">🎙️ 듣는 중...</button>
@@ -3614,11 +3631,14 @@ window.toggleRecList = function toggleRecList() {
 }
 
 // ════════════════════════════════════════════
-// 🗣️ 쉐도잉(Shadowing) 탭 로직
+// 🗣️ 쉐도잉(Shadowing) 탭 로직 — 워드 트래킹 방식
+// (전체 문장을 항상 보여주고, 순서대로 따라 말하면 왼쪽부터 색이 입혀짐)
 // ════════════════════════════════════════════
 let shadowItem = null;        // 현재 출제된 문장 {id, eng, kor, ...}
 let shadowDir = 'ko2en';      // 'ko2en' (한→영 듣고 영어로 말하기) | 'en2ko' (영어 듣고 따라 말하기)
-let shadowWordStates = [];    // 영어 문장의 단어별 토큰 [{text, isWord, hidden, revealed, read}]
+let shadowWordStates = [];    // 영어 문장의 단어별 토큰 [{text, isWord, blocked, said}]
+let shadowWordList = [];      // shadowWordStates 중 isWord=true 인 것만 순서대로 모은 배열(진행 인덱스 추적용)
+let shadowSaidIdx = 0;        // 다음에 맞춰야 할 단어의 wordList상 인덱스 (0부터, 이 값만큼 이미 완료)
 let shadowRecognition = null; // study 탭의 recognition과 별도의 독립 인스턴스
 let isShadowListening = false;
 let shadowDoneCount = 0;
@@ -3637,41 +3657,40 @@ function tokenizeShadowSentence(eng) {
 
 function buildShadowWordStates(eng) {
     const tokens = tokenizeShadowSentence(eng);
-    const wordIndices = [];
-    tokens.forEach((t, i) => { if (/[A-Za-z0-9]/.test(t)) wordIndices.push(i); });
+    const wordIdxs = [];
+    tokens.forEach((t, i) => { if (/[A-Za-z0-9]/.test(t)) wordIdxs.push(i); });
 
-    // 단어 비율 50% 이하만 가리기 (20%~50% 사이에서 랜덤 가림 비율)
+    // 단어 비율 50% 이하만 블록(빈칸)으로 가리기 (20%~50% 사이 랜덤)
     const hideRatio = 0.2 + Math.random() * 0.3;
-    const hideCount = Math.min(wordIndices.length, Math.round(wordIndices.length * hideRatio));
-    const shuffled = [...wordIndices].sort(() => Math.random() - 0.5);
+    const hideCount = Math.min(wordIdxs.length, Math.round(wordIdxs.length * hideRatio));
+    const shuffled = [...wordIdxs].sort(() => Math.random() - 0.5);
     const hiddenSet = new Set(shuffled.slice(0, hideCount));
 
-    return tokens.map((t, i) => ({
+    const states = tokens.map((t, i) => ({
         text: t,
-        isWord: wordIndices.includes(i),
-        hidden: hiddenSet.has(i),
-        revealed: false,
-        read: false   // TTS가 이 단어를 이미 읽었는지 (보이는 단어의 회색→진검정 전환용)
+        isWord: wordIdxs.includes(i),
+        blocked: hiddenSet.has(i), // true면 글자 대신 블록으로 표시 (완료 전까지)
+        said: false                // 사용자가 순서대로 따라 말해서 통과했는지
     }));
+    return states;
 }
 
 function renderShadowSentence() {
-    const box = document.getElementById('shadow-sentence-box');
-    if (!box || !shadowWordStates.length) { if (box) box.innerHTML = ''; return; }
-    box.innerHTML = shadowWordStates.map(ws => {
+    const inner = document.getElementById('shadow-sentence-box');
+    const card = document.getElementById('shadow-sentence-card');
+    if (!inner || !shadowWordStates.length) { if (inner) inner.innerHTML = ''; return; }
+    inner.classList.toggle('is-done', shadowAnsweredAll);
+    if (card) card.classList.toggle('is-done', shadowAnsweredAll);
+    inner.innerHTML = shadowWordStates.map(ws => {
         if (!ws.isWord) return escapeHtml(ws.text);
-        if (ws.hidden && !ws.revealed) {
-            // 가려진 단어: 검은 블록
+        if (ws.blocked && !shadowAnsweredAll) {
             const blockLen = Math.max(2, Math.min(6, ws.text.length));
-            return `<span class="sw-block">${'\u00A0'.repeat(blockLen)}</span>`;
+            return `<span class="sw-blockword${ws.said ? ' sw-said' : ''}">${'\u00A0'.repeat(blockLen)}</span>`;
         }
-        if (ws.hidden && ws.revealed) {
-            // 맞혀서 드러난 단어: 진한 검정 글자
-            return `<span class="sw-revealed">${escapeHtml(ws.text)}</span>`;
-        }
-        // 가려지지 않은 보이는 단어: 읽었으면 진한 검정, 안 읽었으면 회색
-        return `<span class="${ws.read ? 'sw-read' : 'sw-unread'}">${escapeHtml(ws.text)}</span>`;
+        return `<span class="sw-word${ws.said ? ' sw-said' : ''}">${escapeHtml(ws.text)}</span>`;
     }).join('');
+    const doneBadge = document.getElementById('shadow-done-badge');
+    if (doneBadge) doneBadge.style.display = shadowAnsweredAll ? 'flex' : 'none';
 }
 
 function escapeHtml(s) {
@@ -3689,8 +3708,8 @@ function pickShadowItem() {
     return pool[Math.floor(Math.random() * pool.length)];
 }
 
-// 표준 웹음성(SpeechSynthesis)만 사용 — AI TTS는 쓰지 않음 (단어별 onboundary 타이밍 확보 목적)
-function speakShadowEng(text, onWordBoundary, onEnd) {
+// 표준 웹음성(SpeechSynthesis)만 사용 — AI TTS는 쓰지 않음
+function speakShadowEng(text, onEnd) {
     if (!('speechSynthesis' in window)) { if (onEnd) setTimeout(onEnd, 1500); return; }
     window.speechSynthesis.cancel();
     setTimeout(() => {
@@ -3698,9 +3717,6 @@ function speakShadowEng(text, onWordBoundary, onEnd) {
         const best = pickBestVoice(supportedVoices.length ? supportedVoices : window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('en')));
         if (best) u.voice = best; else u.lang = 'en-US';
         u.rate = 0.85; u.pitch = 1.0;
-        if (onWordBoundary) {
-            u.onboundary = (e) => { if (e.name === 'word') onWordBoundary(e.charIndex); };
-        }
         if (onEnd) u.onend = onEnd;
         window.speechSynthesis.speak(u);
     }, 100);
@@ -3719,19 +3735,6 @@ function speakShadowKor(text, onEnd) {
     }, 100);
 }
 
-// charIndex(utterance 텍스트 내 글자 위치)를 받아 shadowWordStates 중 해당 단어를 'read' 처리
-function markShadowWordReadAtCharIndex(charIndex) {
-    let pos = 0;
-    for (const ws of shadowWordStates) {
-        const len = ws.text.length;
-        if (charIndex >= pos && charIndex < pos + len) {
-            if (ws.isWord) { ws.read = true; renderShadowSentence(); }
-            break;
-        }
-        pos += len;
-    }
-}
-
 function clearShadowTimer() {
     if (shadowTimerId) { clearTimeout(shadowTimerId); shadowTimerId = null; }
     const track = document.getElementById('shadow-timer-track');
@@ -3741,9 +3744,8 @@ function clearShadowTimer() {
 function renderShadowTimerBar() {
     const fill = document.getElementById('shadow-timer-fill');
     if (!fill) return;
-    const totalMax = shadowQuestionStart + SHADOW_MAX_LIMIT_MS;
     const remain = Math.max(0, shadowTimerDeadline - Date.now());
-    const span = Math.max(1, shadowTimerDeadline - shadowQuestionStart); // 이번 구간 길이
+    const span = Math.max(1, shadowTimerDeadline - shadowQuestionStart);
     fill.style.transition = 'none';
     const pct = Math.max(0, Math.min(100, (remain / span) * 100));
     fill.style.width = pct + '%';
@@ -3769,7 +3771,7 @@ function extendShadowTimer() {
     if (!shadowTimerId || shadowAnsweredAll) return;
     const absMax = shadowQuestionStart + SHADOW_MAX_LIMIT_MS;
     const newDeadline = Math.min(absMax, Date.now() + SHADOW_EXTEND_MS);
-    if (newDeadline <= shadowTimerDeadline) return; // 이미 더 늦은 마감이면 무시
+    if (newDeadline <= shadowTimerDeadline) return;
     shadowTimerDeadline = newDeadline;
     clearTimeout(shadowTimerId);
     const delay = Math.max(0, shadowTimerDeadline - Date.now());
@@ -3779,15 +3781,7 @@ function extendShadowTimer() {
 
 function onShadowTimeout() {
     if (!shadowItem || shadowAnsweredAll) return;
-    shadowAnsweredAll = true;
-    stopShadowMic();
-    shadowWordStates.forEach(ws => { ws.revealed = true; ws.read = false; });
-    renderShadowSentence();
-    const msgBox = document.getElementById('shadow-msg-box');
-    if (msgBox) msgBox.innerHTML = '<span style="color:var(--error-color);">⏱️ 시간 종료! 정답을 들어보세요.</span>';
-    speakShadowEng(shadowItem.eng, markShadowWordReadAtCharIndex, () => {
-        setTimeout(() => { nextShadowQuestion(); }, 600);
-    });
+    finishShadowQuestion(false);
 }
 
 window.nextShadowQuestion = function() {
@@ -3799,94 +3793,105 @@ window.nextShadowQuestion = function() {
     const item = pickShadowItem();
     const msgBox = document.getElementById('shadow-msg-box');
     const sttPrev = document.getElementById('shadow-stt-preview');
+    const resultActions = document.getElementById('shadow-result-actions');
     if (msgBox) msgBox.innerHTML = '';
+    if (resultActions) resultActions.style.display = 'none';
     if (sttPrev) { sttPrev.style.display = 'none'; sttPrev.innerText = '🗣️ 내가 발음한 내용 실시간 대기 중...'; }
 
     if (!item) {
         shadowItem = null;
-        document.getElementById('shadow-prompt-text').textContent = '학습할 문장이 없습니다. 문장을 먼저 추가해 주세요.';
-        document.getElementById('shadow-sentence-box').innerHTML = '';
+        document.getElementById('shadow-sentence-box').innerHTML = '학습할 문장이 없습니다. 문장을 먼저 추가해 주세요.';
+        document.getElementById('shadow-hint-text').textContent = '';
         return;
     }
 
     shadowItem = item;
     shadowDir = Math.random() < 0.5 ? 'ko2en' : 'en2ko';
     shadowWordStates = buildShadowWordStates(item.eng);
+    shadowWordList = shadowWordStates.filter(ws => ws.isWord);
+    shadowSaidIdx = 0;
     shadowAnsweredAll = false;
 
     const dirBadge = document.getElementById('shadow-dir-badge');
-    const promptText = document.getElementById('shadow-prompt-text');
+    const hintText = document.getElementById('shadow-hint-text');
+    dirBadge.textContent = shadowDir === 'ko2en' ? '한국어 듣고 → 영어로 말하기' : '영어 듣고 → 따라 말하기 (쉐도잉)';
+    hintText.textContent = item.kor; // 한국어 힌트는 모드 무관하게 항상 표시
     renderShadowSentence();
 
     if (shadowDir === 'ko2en') {
-        dirBadge.textContent = '한국어 듣고 → 영어로 말하기';
-        promptText.textContent = item.kor;
-        speakShadowKor(item.kor, () => {
-            startShadowTimer();
-            startShadowMic();
-        });
+        speakShadowKor(item.kor, () => { startShadowTimer(); startShadowMic(); });
     } else {
-        dirBadge.textContent = '영어 듣고 → 따라 말하기 (쉐도잉)';
-        promptText.textContent = '🎧 영어 음성을 듣고 따라 말해보세요';
-        speakShadowEng(item.eng, markShadowWordReadAtCharIndex, () => {
-            startShadowTimer();
-            startShadowMic();
-        });
+        speakShadowEng(item.eng, () => { startShadowTimer(); startShadowMic(); });
     }
 };
 
 window.replayShadowAudio = function() {
     if (!shadowItem) return;
     if (window.speechSynthesis) window.speechSynthesis.cancel();
-    if (shadowDir === 'ko2en') speakShadowKor(shadowItem.kor, () => {});
-    else speakShadowEng(shadowItem.eng, markShadowWordReadAtCharIndex, () => {});
+    speakShadowEng(shadowItem.eng, () => {});
 };
 
+// "정답" 버튼: 포기하고 전체 정답 공개 후 다음 문제로
 window.revealShadowSentence = function() {
     if (!shadowItem || shadowAnsweredAll) return;
+    finishShadowQuestion(false);
+};
+
+// 문제 종료 공통 처리. success=true면 사용자가 다 맞힌 것, false면 시간초과/포기
+function finishShadowQuestion(success) {
     shadowAnsweredAll = true;
     clearShadowTimer();
     stopShadowMic();
-    shadowWordStates.forEach(ws => { ws.revealed = true; ws.read = false; });
+    shadowWordStates.forEach(ws => { ws.said = true; });
     renderShadowSentence();
-    document.getElementById('shadow-msg-box').innerHTML = '<span style="color:#64748b;">정답을 확인했어요.</span>';
-    speakShadowEng(shadowItem.eng, markShadowWordReadAtCharIndex, () => {});
-};
 
-function checkShadowAllRevealed() {
-    return shadowWordStates.filter(ws => ws.isWord && ws.hidden).every(ws => ws.revealed);
+    const msgBox = document.getElementById('shadow-msg-box');
+    const resultActions = document.getElementById('shadow-result-actions');
+    if (resultActions) resultActions.style.display = 'flex';
+
+    if (success) {
+        shadowDoneCount++;
+        const badge = document.getElementById('shadow-count-badge');
+        if (badge) badge.textContent = `🗣️ ${shadowDoneCount}회 완료`;
+        if (msgBox) msgBox.innerHTML = '<span style="color:var(--success-color);">🎉 완벽해요!</span>';
+    } else {
+        if (msgBox) msgBox.innerHTML = '<span style="color:var(--error-color);">⏱️ 정답을 확인해보세요.</span>';
+    }
+    // 성공/시간초과 모두 정답 문장을 영어로 한 번 읽어준 뒤 자동으로 다음 문제로
+    speakShadowEng(shadowItem.eng, () => {
+        setTimeout(() => { nextShadowQuestion(); }, success ? 900 : 1400);
+    });
 }
 
+// 사용자가 발화한 문자열을 받아 "다음 차례 단어"와 순서대로 비교하며 진행
 function processShadowSpeech(spokenText) {
     if (!shadowItem || shadowAnsweredAll) return;
     const cleanSpoken = normalizeText(spokenText);
     const spokenTokens = cleanSpoken.split(/\s+/).filter(Boolean);
     if (spokenTokens.length === 0) return;
 
-    let anyMatched = false;
-    shadowWordStates.forEach(ws => {
-        if (!ws.isWord || !ws.hidden || ws.revealed) return;
-        const cleanTarget = normalizeText(ws.text);
-        if (!cleanTarget) return;
-        const matched = spokenTokens.some(tok => tok === cleanTarget || getSimilarity(tok, cleanTarget) >= 0.6);
-        if (matched) { ws.revealed = true; anyMatched = true; }
-    });
-
-    if (anyMatched) {
-        renderShadowSentence();
-        if (checkShadowAllRevealed()) {
-            shadowAnsweredAll = true;
-            clearShadowTimer();
-            shadowDoneCount++;
-            const badge = document.getElementById('shadow-count-badge');
-            if (badge) badge.textContent = `🗣️ ${shadowDoneCount}회 완료`;
-            document.getElementById('shadow-msg-box').innerHTML = '<span style="color:var(--success-color);">🎉 완벽해요!</span>';
-            stopShadowMic();
-            // 맞혀도 정답 문장을 영어로 한 번 읽어준 뒤 다음 문제로
-            speakShadowEng(shadowItem.eng, markShadowWordReadAtCharIndex, () => {
-                setTimeout(() => { nextShadowQuestion(); }, 500);
-            });
+    let advanced = false;
+    // spokenTokens를 순서대로 훑으면서, 현재 차례 단어와 매칭되면 한 칸씩 전진
+    // (STT 결과가 누적/중간결과라 같은 단어가 여러 번 들어올 수 있어 토큰 포인터를 따로 둠)
+    let tokenPtr = 0;
+    while (shadowSaidIdx < shadowWordList.length && tokenPtr < spokenTokens.length) {
+        const target = normalizeText(shadowWordList[shadowSaidIdx].text);
+        if (!target) { shadowWordList[shadowSaidIdx].said = true; shadowSaidIdx++; advanced = true; continue; }
+        let foundAt = -1;
+        for (let j = tokenPtr; j < spokenTokens.length; j++) {
+            const tok = spokenTokens[j];
+            if (tok === target || getSimilarity(tok, target) >= 0.6) { foundAt = j; break; }
         }
+        if (foundAt === -1) break; // 다음 차례 단어를 못 찾으면 중단 (순서 보존)
+        shadowWordList[shadowSaidIdx].said = true;
+        shadowSaidIdx++;
+        tokenPtr = foundAt + 1;
+        advanced = true;
+    }
+
+    if (advanced) {
+        renderShadowSentence();
+        if (shadowSaidIdx >= shadowWordList.length) finishShadowQuestion(true);
     }
 }
 
@@ -3918,7 +3923,7 @@ function initShadowRecognition() {
         const speechResult = (final || interim).toLowerCase().trim();
         const prev = document.getElementById('shadow-stt-preview');
         if (prev) prev.innerText = `💬 인식된 발음: "${speechResult}"`;
-        if (speechResult) extendShadowTimer(); // 뭔가 말하고 있다는 신호 → 제한시간 연장(최대 30초)
+        if (speechResult) extendShadowTimer();
         processShadowSpeech(speechResult);
     };
     shadowRecognition.onerror = (e) => {
