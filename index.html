@@ -127,13 +127,12 @@
         .shadow-sentence-box { position: relative; background: #fff; border: none; border-radius: 16px; margin: 0 16px 12px; padding: 28px 18px 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); text-align: center; min-height: 70px; }
         .shadow-sentence-box.is-done { background: #f0fdf6; }
         .shadow-done-badge { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: var(--success-color); color: #fff; font-size: 1.1rem; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-        .shadow-sentence-box-inner { font-size: 1.5rem; font-weight: 700; line-height: 1.9; word-spacing: 3px; }
+        .shadow-sentence-box-inner { font-size: 1.5rem; font-weight: 700; line-height: 1.9; word-spacing: 1px; }
         .shadow-sentence-box-inner .sw-word { color: #cbd5e1; transition: color 0.15s; }
         .shadow-sentence-box-inner .sw-word.sw-said { color: var(--primary-active); }
         .shadow-sentence-box-inner.is-done .sw-word { color: var(--success-color) !important; }
         .shadow-sentence-box-inner .sw-blockword { display: inline-block; min-width: 1.4em; background: #cbd5e1; border-radius: 5px; color: transparent; user-select: none; vertical-align: middle; line-height: 1.15; transition: background 0.15s, transform 0.1s; cursor: pointer; }
         .shadow-sentence-box-inner .sw-blockword:active { transform: scale(0.92); }
-        .shadow-sentence-box-inner .sw-blockword.sw-said { background: var(--primary-active); cursor: default; }
         .shadow-sentence-box-inner.is-done .sw-blockword { background: transparent !important; color: var(--success-color) !important; box-shadow: inset 0 0 0 9999px rgba(34,197,94,0.15); padding: 0 2px; cursor: default; }
         .shadow-hint-row { margin-top: 14px; font-size: 0.95rem; color: #475569; }
         .shadow-hint-label { background: #fde68a; color: #78350f; font-weight: 700; font-size: 0.72rem; padding: 2px 7px; border-radius: 5px; margin-right: 6px; vertical-align: middle; }
@@ -166,12 +165,10 @@
             color: white; box-sizing: border-box; overflow: hidden;
         }
         #shadow-fullscreen-overlay.open { display: flex; }
+        .sfs-count-badge { position: absolute; top: max(env(safe-area-inset-top, 14px), 14px); left: max(env(safe-area-inset-left, 14px), 14px); background: rgba(255,255,255,0.15); color: #fff; font-size: 0.8rem; font-weight: 700; padding: 7px 12px; border-radius: 20px; z-index: 2; }
         .sfs-body { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: max(env(safe-area-inset-top, 24px), 24px) 20px max(env(safe-area-inset-bottom, 24px), 24px); box-sizing: border-box; overflow-y: auto; }
         #shadow-fullscreen-overlay #shadow-main-area { width: 100%; max-width: 480px; }
-        #shadow-fullscreen-overlay .cat-filter-bar { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.25); }
-        #shadow-fullscreen-overlay .cat-trigger { background: rgba(255,255,255,0.9); }
-        #shadow-fullscreen-overlay .shadow-count-badge { background: rgba(255,255,255,0.18); color: #fff; }
-        #shadow-fullscreen-overlay .shadow-fs-trigger { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.3); color: #fff; }
+        #shadow-fullscreen-overlay .cat-filter-bar { display: none; } /* 전체화면에서는 카테고리 필터/카운트 숨김 - 문장에만 집중 */
         #shadow-fullscreen-overlay .shadow-dir-badge { background: rgba(255,255,255,0.18); color: #fff; }
         #shadow-fullscreen-overlay .shadow-sentence-box { background: rgba(255,255,255,0.97); }
         #shadow-fullscreen-overlay .shadow-sentence-box-inner { font-size: clamp(1.6rem, 6vw, 2.1rem); }
@@ -672,6 +669,7 @@
         <!-- 🖥️ 쉐도잉 전체화면 오버레이 (몰입 모드) -->
         <div id="shadow-fullscreen-overlay">
             <button class="lfs-close-btn" onclick="closeShadowFullscreen()" aria-label="전체화면 닫기">✕</button>
+            <div class="sfs-count-badge" id="shadow-fs-count-badge">🗣️ 0회 완료</div>
             <div class="sfs-body" id="shadow-fs-mount"><!-- shadow-main-area가 여기로 이동됨 --></div>
         </div>
 
@@ -3726,11 +3724,12 @@ function renderShadowSentence() {
     if (card) card.classList.toggle('is-done', shadowAnsweredAll);
     inner.innerHTML = shadowWordStates.map((ws, idx) => {
         if (!ws.isWord) return escapeHtml(ws.text);
-        if (ws.blocked && !shadowAnsweredAll) {
+        if (ws.blocked && !ws.said && !shadowAnsweredAll) {
+            // 아직 안 맞힌 가려진 단어만 블록으로 표시
             const blockLen = Math.max(2, Math.min(6, ws.text.length));
-            const tapAttr = ws.said ? '' : ` onclick="tapRevealShadowWord(${idx})"`;
-            return `<span class="sw-blockword${ws.said ? ' sw-said' : ''}"${tapAttr}>${'\u00A0'.repeat(blockLen)}</span>`;
+            return `<span class="sw-blockword" onclick="tapRevealShadowWord(${idx})">${'\u00A0'.repeat(blockLen)}</span>`;
         }
+        // 맞혔거나(said) 안 가려진 단어는 곧바로 글자로 표시
         return `<span class="sw-word${ws.said ? ' sw-said' : ''}">${escapeHtml(ws.text)}</span>`;
     }).join('');
     const doneBadge = document.getElementById('shadow-done-badge');
@@ -3942,8 +3941,11 @@ function finishShadowQuestion(success) {
 
     if (success) {
         shadowDoneCount++;
+        const badgeText = `🗣️ ${shadowDoneCount}회 완료`;
         const badge = document.getElementById('shadow-count-badge');
-        if (badge) badge.textContent = `🗣️ ${shadowDoneCount}회 완료`;
+        if (badge) badge.textContent = badgeText;
+        const fsBadge = document.getElementById('shadow-fs-count-badge');
+        if (fsBadge) fsBadge.textContent = badgeText;
         if (msgBox) msgBox.innerHTML = '<span style="color:var(--success-color);">🎉 완벽해요!</span>';
     } else {
         if (msgBox) msgBox.innerHTML = '<span style="color:var(--error-color);">⏱️ 정답을 확인해보세요.</span>';
