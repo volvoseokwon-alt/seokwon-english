@@ -3691,6 +3691,23 @@ const SHADOW_BASE_LIMIT_MS = 20000;  // 기본 제한시간 20초
 const SHADOW_MAX_LIMIT_MS  = 30000;  // 음성 감지 시 연장되는 절대 최대 한도 30초
 const SHADOW_EXTEND_MS     = 4000;   // 음성 감지될 때마다 추가되는 시간
 
+// 쉐도잉 전용 단어 비교 정규화: normalizeText와 달리 줄임말을 풀어쓰지 않음
+// ("i'm" -> "i am" 같은 분해를 하면 단어 1개가 2단어가 되어 매칭이 깨지므로,
+//  대소문자/구두점만 정리하고 토큰 형태를 그대로 유지한다)
+function normalizeShadowWord(text) {
+    return text.toLowerCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"]/g, '');
+}
+
+// STT가 음성학적으로 자주 혼동하는 짧은 기능어 쌍 (둘 중 하나로 인식되면 같은 단어로 취급)
+const SHADOW_SOUND_ALIKE = [
+    ['it', 'eat'], ['it', 'ate'], ['a', 'uh'], ['the', 'duh'], ['to', 'too'], ['to', 'two'],
+    ['for', 'four'], ['for', 'far'], ['or', 'are'], ['is', 'this'], ['and', 'an'],
+    ['can', "can't"], ['will', 'we'], ['was', 'is'], ['of', 'have'], ['than', 'then']
+];
+function isShadowSoundAlike(a, b) {
+    return SHADOW_SOUND_ALIKE.some(pair => (pair[0] === a && pair[1] === b) || (pair[0] === b && pair[1] === a));
+}
+
 function tokenizeShadowSentence(eng) {
     // 단어와 단어 사이 구분을 보존하기 위해 정규식으로 분리 (단어/공백/구두점)
     return eng.match(/[A-Za-z0-9']+|[^A-Za-z0-9']+/g) || [eng];
@@ -3970,7 +3987,7 @@ window.tapRevealShadowWord = function(idx) {
 
 function processShadowSpeech(spokenText) {
     if (!shadowItem || shadowAnsweredAll || shadowPaused) return;
-    const cleanSpoken = normalizeText(spokenText);
+    const cleanSpoken = normalizeShadowWord(spokenText);
     const spokenTokens = cleanSpoken.split(/\s+/).filter(Boolean);
     if (spokenTokens.length === 0) return;
 
@@ -3982,9 +3999,12 @@ function processShadowSpeech(spokenText) {
         for (let i = 0; i < shadowWordList.length; i++) {
             const ws = shadowWordList[i];
             if (ws.said) continue;
-            const target = normalizeText(ws.text);
+            const target = normalizeShadowWord(ws.text);
             if (!target) continue;
-            if (tok === target || getSimilarity(tok, target) >= 0.6) {
+            const isMatch = tok === target
+                || getSimilarity(tok, target) >= 0.6
+                || isShadowSoundAlike(tok, target);
+            if (isMatch) {
                 ws.said = true;
                 advanced = true;
                 break; // 이 발화 토큰은 이 위치에 매칭 완료, 다음 토큰으로
