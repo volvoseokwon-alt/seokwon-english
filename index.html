@@ -131,9 +131,10 @@
         .shadow-sentence-box-inner .sw-word { color: #cbd5e1; transition: color 0.15s; }
         .shadow-sentence-box-inner .sw-word.sw-said { color: var(--primary-active); }
         .shadow-sentence-box-inner.is-done .sw-word { color: var(--success-color) !important; }
-        .shadow-sentence-box-inner .sw-blockword { display: inline-block; min-width: 1.4em; background: #cbd5e1; border-radius: 5px; color: transparent; user-select: none; vertical-align: middle; line-height: 1.15; transition: background 0.15s; }
-        .shadow-sentence-box-inner .sw-blockword.sw-said { background: var(--primary-active); }
-        .shadow-sentence-box-inner.is-done .sw-blockword { background: transparent !important; color: var(--success-color) !important; box-shadow: inset 0 0 0 9999px rgba(34,197,94,0.15); padding: 0 2px; }
+        .shadow-sentence-box-inner .sw-blockword { display: inline-block; min-width: 1.4em; background: #cbd5e1; border-radius: 5px; color: transparent; user-select: none; vertical-align: middle; line-height: 1.15; transition: background 0.15s, transform 0.1s; cursor: pointer; }
+        .shadow-sentence-box-inner .sw-blockword:active { transform: scale(0.92); }
+        .shadow-sentence-box-inner .sw-blockword.sw-said { background: var(--primary-active); cursor: default; }
+        .shadow-sentence-box-inner.is-done .sw-blockword { background: transparent !important; color: var(--success-color) !important; box-shadow: inset 0 0 0 9999px rgba(34,197,94,0.15); padding: 0 2px; cursor: default; }
         .shadow-hint-row { margin-top: 14px; font-size: 0.95rem; color: #475569; }
         .shadow-hint-label { background: #fde68a; color: #78350f; font-weight: 700; font-size: 0.72rem; padding: 2px 7px; border-radius: 5px; margin-right: 6px; vertical-align: middle; }
         .shadow-result-actions { display: flex; gap: 8px; justify-content: center; margin-top: 16px; }
@@ -150,6 +151,32 @@
         .shadow-count-badge { background: #f1f5f9; color: #475569; font-size: 0.8rem; font-weight: 600; padding: 3px 10px; border-radius: 12px; margin-left: auto; }
         .shadow-timer-track { height: 6px; background: #e2e8f0; border-radius: 4px; margin: 0 16px 10px; overflow: hidden; }
         .shadow-timer-fill { height: 100%; width: 100%; background: var(--mic-color); border-radius: 4px; transform-origin: left; transition: none; }
+        .shadow-fs-trigger { background: #fff; border: 1px solid #c7d2fe; color: var(--primary-active); width: 30px; height: 30px; border-radius: 8px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .shadow-fs-trigger:active { transform: scale(0.93); }
+        .shadow-pause-btn { background: #f1f5f9; color: #475569; }
+        .shadow-pause-btn.is-paused { background: var(--success-color); color: #fff; }
+        .shadow-pause-overlay { display: none; position: absolute; inset: 0; border-radius: 16px; background: rgba(255,255,255,0.85); align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem; color: #475569; z-index: 3; }
+        .shadow-sentence-box.is-paused .shadow-pause-overlay { display: flex; }
+
+        /* 🖥️ 쉐도잉 전체화면(몰입) 오버레이 */
+        #shadow-fullscreen-overlay {
+            display: none; position: fixed; inset: 0; z-index: 999;
+            width: 100vw; height: 100vh; width: 100dvw; height: 100dvh;
+            background: linear-gradient(165deg, #4338ca 0%, #6d28d9 55%, #312e81 100%);
+            color: white; box-sizing: border-box; overflow: hidden;
+        }
+        #shadow-fullscreen-overlay.open { display: flex; }
+        .sfs-body { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: max(env(safe-area-inset-top, 24px), 24px) 20px max(env(safe-area-inset-bottom, 24px), 24px); box-sizing: border-box; overflow-y: auto; }
+        #shadow-fullscreen-overlay #shadow-main-area { width: 100%; max-width: 480px; }
+        #shadow-fullscreen-overlay .cat-filter-bar { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.25); }
+        #shadow-fullscreen-overlay .cat-trigger { background: rgba(255,255,255,0.9); }
+        #shadow-fullscreen-overlay .shadow-count-badge { background: rgba(255,255,255,0.18); color: #fff; }
+        #shadow-fullscreen-overlay .shadow-fs-trigger { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.3); color: #fff; }
+        #shadow-fullscreen-overlay .shadow-dir-badge { background: rgba(255,255,255,0.18); color: #fff; }
+        #shadow-fullscreen-overlay .shadow-sentence-box { background: rgba(255,255,255,0.97); }
+        #shadow-fullscreen-overlay .shadow-sentence-box-inner { font-size: clamp(1.6rem, 6vw, 2.1rem); }
+        #shadow-fullscreen-overlay .stt-preview { color: rgba(255,255,255,0.85); }
+        #shadow-fullscreen-overlay #shadow-msg-box { color: #fff; }
         /* 📝 단어·숙어 노트 */
         .vocab-box { display: none; margin-top: 10px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 10px 12px; }
         .vocab-title { font-size: 0.72rem; font-weight: 800; color: #b45309; letter-spacing: 0.03em; margin-bottom: 6px; }
@@ -607,34 +634,45 @@
 
         <!-- ── 탭: 쉐도잉 ── -->
         <div id="shadow-view" class="view">
-            <div class="cat-filter-bar">
-                <span class="cat-ico">🏷️</span>
-                <button type="button" class="cat-trigger" id="shadow-cat-trigger" onclick="openShadowFilter()">📚 전체</button>
-                <span class="shadow-count-badge" id="shadow-count-badge">🗣️ 0회 완료</span>
-            </div>
-            <div class="shadow-dir-badge" id="shadow-dir-badge">한국어 → 영어</div>
-            <div class="shadow-timer-track" id="shadow-timer-track" style="display:none;">
-                <div class="shadow-timer-fill" id="shadow-timer-fill"></div>
-            </div>
-            <div class="shadow-sentence-box" id="shadow-sentence-card">
-                <div class="shadow-done-badge" id="shadow-done-badge" style="display:none;">✅</div>
-                <div class="shadow-sentence-box-inner" id="shadow-sentence-box"></div>
-                <div class="shadow-hint-row" id="shadow-hint-row">
-                    <span class="shadow-hint-label">힌트</span>
-                    <span class="shadow-hint-text" id="shadow-hint-text"></span>
+            <div id="shadow-main-area">
+                <div class="cat-filter-bar">
+                    <span class="cat-ico">🏷️</span>
+                    <button type="button" class="cat-trigger" id="shadow-cat-trigger" onclick="openShadowFilter()">📚 전체</button>
+                    <span class="shadow-count-badge" id="shadow-count-badge">🗣️ 0회 완료</span>
+                    <button type="button" class="shadow-fs-trigger" onclick="openShadowFullscreen()" aria-label="전체화면">⛶</button>
                 </div>
-                <div class="shadow-result-actions" id="shadow-result-actions" style="display:none;">
-                    <button class="shadow-result-btn" onclick="replayShadowAudio()">🔊 모범 발음</button>
-                    <button class="shadow-result-btn" onclick="nextShadowQuestion()">🔁 다시하기</button>
+                <div class="shadow-dir-badge" id="shadow-dir-badge">한국어 → 영어</div>
+                <div class="shadow-timer-track" id="shadow-timer-track" style="display:none;">
+                    <div class="shadow-timer-fill" id="shadow-timer-fill"></div>
                 </div>
+                <div class="shadow-sentence-box" id="shadow-sentence-card">
+                    <div class="shadow-done-badge" id="shadow-done-badge" style="display:none;">✅</div>
+                    <div class="shadow-pause-overlay">⏸ 일시정지됨</div>
+                    <div class="shadow-sentence-box-inner" id="shadow-sentence-box"></div>
+                    <div class="shadow-hint-row" id="shadow-hint-row">
+                        <span class="shadow-hint-label">힌트</span>
+                        <span class="shadow-hint-text" id="shadow-hint-text"></span>
+                    </div>
+                    <div class="shadow-result-actions" id="shadow-result-actions" style="display:none;">
+                        <button class="shadow-result-btn" onclick="replayShadowAudio()">🔊 모범 발음</button>
+                        <button class="shadow-result-btn" onclick="nextShadowQuestion()">🔁 다시하기</button>
+                    </div>
+                </div>
+                <div class="stt-preview" id="shadow-stt-preview">🗣️ 내가 발음한 내용 실시간 대기 중...</div>
+                <div class="shadow-action-area">
+                    <button class="shadow-pause-btn" onclick="toggleShadowPause()">⏸ 일시정지</button>
+                    <button class="speak-mode-btn" id="shadow-mic-btn" onclick="toggleShadowMic()">🎙️ 듣는 중...</button>
+                    <button class="answer-btn" id="shadow-reveal-btn" onclick="revealShadowSentence()">👁️ 정답</button>
+                    <button class="skip-btn" id="shadow-next-btn" onclick="nextShadowQuestion()">⏭️ 다음 문장</button>
+                </div>
+                <div id="shadow-msg-box"></div>
             </div>
-            <div class="stt-preview" id="shadow-stt-preview">🗣️ 내가 발음한 내용 실시간 대기 중...</div>
-            <div class="shadow-action-area">
-                <button class="speak-mode-btn" id="shadow-mic-btn" onclick="toggleShadowMic()">🎙️ 듣는 중...</button>
-                <button class="answer-btn" id="shadow-reveal-btn" onclick="revealShadowSentence()">👁️ 정답</button>
-                <button class="skip-btn" id="shadow-next-btn" onclick="nextShadowQuestion()">⏭️ 다음 문장</button>
-            </div>
-            <div id="shadow-msg-box"></div>
+        </div>
+
+        <!-- 🖥️ 쉐도잉 전체화면 오버레이 (몰입 모드) -->
+        <div id="shadow-fullscreen-overlay">
+            <button class="lfs-close-btn" onclick="closeShadowFullscreen()" aria-label="전체화면 닫기">✕</button>
+            <div class="sfs-body" id="shadow-fs-mount"><!-- shadow-main-area가 여기로 이동됨 --></div>
         </div>
 
 
@@ -2052,6 +2090,8 @@ function switchTab(tab) {
     }
     if (tab !== 'shadow') {
         stopShadowMic();
+        if (shadowFullscreen) closeShadowFullscreen();
+        if (shadowPaused) { /* 탭 이탈 시 굳이 자동재생 재개하지 않음 - 상태 유지 */ }
     } else {
         initShadowTab();
     }
@@ -3643,6 +3683,9 @@ let shadowRecognition = null; // study 탭의 recognition과 별도의 독립 �
 let isShadowListening = false;
 let shadowDoneCount = 0;
 let shadowAnsweredAll = false;
+let shadowPaused = false;       // 쉐도잉 일시정지 상태
+let shadowRemainAtPause = 0;    // 일시정지 시점에 남아있던 타이머(ms)
+let shadowFullscreen = false;   // 전체화면 모드 여부
 let shadowTimerId = null;     // 타임아웃 setTimeout 핸들
 let shadowTimerDeadline = 0;  // 현재 적용된 마감 시각(ms, Date.now() 기준)
 let shadowQuestionStart = 0;  // 문제 시작 시각(절대 30초 한도 계산용)
@@ -3681,11 +3724,12 @@ function renderShadowSentence() {
     if (!inner || !shadowWordStates.length) { if (inner) inner.innerHTML = ''; return; }
     inner.classList.toggle('is-done', shadowAnsweredAll);
     if (card) card.classList.toggle('is-done', shadowAnsweredAll);
-    inner.innerHTML = shadowWordStates.map(ws => {
+    inner.innerHTML = shadowWordStates.map((ws, idx) => {
         if (!ws.isWord) return escapeHtml(ws.text);
         if (ws.blocked && !shadowAnsweredAll) {
             const blockLen = Math.max(2, Math.min(6, ws.text.length));
-            return `<span class="sw-blockword${ws.said ? ' sw-said' : ''}">${'\u00A0'.repeat(blockLen)}</span>`;
+            const tapAttr = ws.said ? '' : ` onclick="tapRevealShadowWord(${idx})"`;
+            return `<span class="sw-blockword${ws.said ? ' sw-said' : ''}"${tapAttr}>${'\u00A0'.repeat(blockLen)}</span>`;
         }
         return `<span class="sw-word${ws.said ? ' sw-said' : ''}">${escapeHtml(ws.text)}</span>`;
     }).join('');
@@ -3768,7 +3812,7 @@ function startShadowTimer() {
 
 // 마이크에 음성이 감지될 때마다 호출 — 마감 시각을 늘리되 절대 최대(질문 시작 + 30초)를 넘지 않음
 function extendShadowTimer() {
-    if (!shadowTimerId || shadowAnsweredAll) return;
+    if (!shadowTimerId || shadowAnsweredAll || shadowPaused) return;
     const absMax = shadowQuestionStart + SHADOW_MAX_LIMIT_MS;
     const newDeadline = Math.min(absMax, Date.now() + SHADOW_EXTEND_MS);
     if (newDeadline <= shadowTimerDeadline) return;
@@ -3780,8 +3824,53 @@ function extendShadowTimer() {
 }
 
 function onShadowTimeout() {
-    if (!shadowItem || shadowAnsweredAll) return;
+    if (!shadowItem || shadowAnsweredAll || shadowPaused) return;
     finishShadowQuestion(false);
+}
+
+// 일시정지: 마이크/타이머를 멈추고 남은 시간을 저장해둠 (TTS 재생 중이면 같이 멈춤)
+window.toggleShadowPause = function() {
+    if (!shadowItem || shadowAnsweredAll) return;
+    if (shadowPaused) resumeShadow(); else pauseShadow();
+};
+
+function pauseShadow() {
+    if (shadowPaused || !shadowItem || shadowAnsweredAll) return;
+    shadowPaused = true;
+    shadowRemainAtPause = Math.max(0, shadowTimerDeadline - Date.now());
+    if (shadowTimerId) { clearTimeout(shadowTimerId); shadowTimerId = null; }
+    const fill = document.getElementById('shadow-timer-fill');
+    if (fill) fill.style.transition = 'none'; // 진행바 멈춘 채로 고정
+    if (window.speechSynthesis) window.speechSynthesis.pause();
+    stopShadowMic();
+    updateShadowPauseUI();
+}
+
+function resumeShadow() {
+    if (!shadowPaused || !shadowItem || shadowAnsweredAll) return;
+    shadowPaused = false;
+    shadowTimerDeadline = Date.now() + shadowRemainAtPause;
+    const remain = shadowRemainAtPause;
+    const fill = document.getElementById('shadow-timer-fill');
+    if (fill) {
+        requestAnimationFrame(() => {
+            fill.style.transition = `width ${remain}ms linear`;
+            fill.style.width = '0%';
+        });
+    }
+    shadowTimerId = setTimeout(() => { onShadowTimeout(); }, remain);
+    if (window.speechSynthesis) window.speechSynthesis.resume();
+    startShadowMic();
+    updateShadowPauseUI();
+}
+
+function updateShadowPauseUI() {
+    document.querySelectorAll('.shadow-pause-btn').forEach(btn => {
+        btn.textContent = shadowPaused ? '▶ 계속하기' : '⏸ 일시정지';
+        btn.classList.toggle('is-paused', shadowPaused);
+    });
+    const card = document.getElementById('shadow-sentence-card');
+    if (card) card.classList.toggle('is-paused', shadowPaused);
 }
 
 window.nextShadowQuestion = function() {
@@ -3789,6 +3878,8 @@ window.nextShadowQuestion = function() {
     clearShadowTimer();
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     stopAITTS();
+    shadowPaused = false;
+    updateShadowPauseUI();
 
     const item = pickShadowItem();
     const msgBox = document.getElementById('shadow-msg-box');
@@ -3864,34 +3955,45 @@ function finishShadowQuestion(success) {
 }
 
 // 사용자가 발화한 문자열을 받아 "다음 차례 단어"와 순서대로 비교하며 진행
+// 블록(가려진 단어)을 직접 탭하면 부담 없이 바로 통과 처리 — 음성 인식과 동일하게 완료로 집계
+window.tapRevealShadowWord = function(idx) {
+    if (!shadowItem || shadowAnsweredAll || shadowPaused) return;
+    const ws = shadowWordStates[idx];
+    if (!ws || !ws.isWord || !ws.blocked || ws.said) return;
+    ws.said = true;
+    shadowSaidIdx = shadowWordList.filter(w => w.said).length;
+    renderShadowSentence();
+    if (shadowWordList.every(w => w.said)) finishShadowQuestion(true);
+};
+
 function processShadowSpeech(spokenText) {
-    if (!shadowItem || shadowAnsweredAll) return;
+    if (!shadowItem || shadowAnsweredAll || shadowPaused) return;
     const cleanSpoken = normalizeText(spokenText);
     const spokenTokens = cleanSpoken.split(/\s+/).filter(Boolean);
     if (spokenTokens.length === 0) return;
 
     let advanced = false;
-    // spokenTokens를 순서대로 훑으면서, 현재 차례 단어와 매칭되면 한 칸씩 전진
-    // (STT 결과가 누적/중간결과라 같은 단어가 여러 번 들어올 수 있어 토큰 포인터를 따로 둠)
-    let tokenPtr = 0;
-    while (shadowSaidIdx < shadowWordList.length && tokenPtr < spokenTokens.length) {
-        const target = normalizeText(shadowWordList[shadowSaidIdx].text);
-        if (!target) { shadowWordList[shadowSaidIdx].said = true; shadowSaidIdx++; advanced = true; continue; }
-        let foundAt = -1;
-        for (let j = tokenPtr; j < spokenTokens.length; j++) {
-            const tok = spokenTokens[j];
-            if (tok === target || getSimilarity(tok, target) >= 0.6) { foundAt = j; break; }
+    // 순서 강제 없이: 인식된 단어 하나하나가 문장 속 "아직 안된" 위치 중 일치하는 곳을 모두 채움
+    // (같은 단어가 문장에 여러 번 나오면 앞쪽 미완료 위치부터 우선 채움)
+    spokenTokens.forEach(tok => {
+        if (!tok) return;
+        for (let i = 0; i < shadowWordList.length; i++) {
+            const ws = shadowWordList[i];
+            if (ws.said) continue;
+            const target = normalizeText(ws.text);
+            if (!target) continue;
+            if (tok === target || getSimilarity(tok, target) >= 0.6) {
+                ws.said = true;
+                advanced = true;
+                break; // 이 발화 토큰은 이 위치에 매칭 완료, 다음 토큰으로
+            }
         }
-        if (foundAt === -1) break; // 다음 차례 단어를 못 찾으면 중단 (순서 보존)
-        shadowWordList[shadowSaidIdx].said = true;
-        shadowSaidIdx++;
-        tokenPtr = foundAt + 1;
-        advanced = true;
-    }
+    });
 
     if (advanced) {
+        shadowSaidIdx = shadowWordList.filter(w => w.said).length;
         renderShadowSentence();
-        if (shadowSaidIdx >= shadowWordList.length) finishShadowQuestion(true);
+        if (shadowWordList.every(w => w.said)) finishShadowQuestion(true);
     }
 }
 
@@ -3970,6 +4072,27 @@ function initShadowTab() {
     updateShadowTriggerLabel();
     if (!shadowItem) nextShadowQuestion();
 }
+
+// 쉐도잉 전체화면(몰입) 모드: shadow-main-area DOM을 오버레이로 이동시켰다가 닫을 때 원위치로 복귀
+window.openShadowFullscreen = function() {
+    const mainArea = document.getElementById('shadow-main-area');
+    const mount = document.getElementById('shadow-fs-mount');
+    const overlay = document.getElementById('shadow-fullscreen-overlay');
+    if (!mainArea || !mount || !overlay) return;
+    mount.appendChild(mainArea);
+    overlay.classList.add('open');
+    shadowFullscreen = true;
+};
+
+window.closeShadowFullscreen = function() {
+    const mainArea = document.getElementById('shadow-main-area');
+    const shadowView = document.getElementById('shadow-view');
+    const overlay = document.getElementById('shadow-fullscreen-overlay');
+    if (!mainArea || !shadowView || !overlay) return;
+    shadowView.appendChild(mainArea);
+    overlay.classList.remove('open');
+    shadowFullscreen = false;
+};
 
 
 </script>
