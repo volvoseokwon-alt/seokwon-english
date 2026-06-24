@@ -619,6 +619,7 @@
         .cp-custom { width: 100%; background: #eef2ff; color: #4338ca; border: 1px dashed #a5b4fc; padding: 12px; border-radius: 12px; font-weight: bold; font-size: 0.95rem; cursor: pointer; margin-bottom: 8px; }
         .cp-close { width: 100%; background: #f1f5f9; color: #64748b; border: none; padding: 12px; border-radius: 12px; font-weight: bold; font-size: 0.95rem; cursor: pointer; }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -890,6 +891,11 @@
                             <input type="file" id="import-file" accept="application/json,.json" style="display:none;" onchange="importData(event)">
                         </label>
                         <button class="add-btn" style="background:#94a3b8;" onclick="clearTTSCache()">🗑️ 저장된 AI 음성 캐시 비우기</button>
+                    </div>
+                    <div class="setting-form" style="margin-bottom:4px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px;">
+                        <span style="font-size:0.82rem;font-weight:bold;color:#c2410c;">📊 문서로 내보내기</span>
+                        <button class="add-btn" style="background:#ea580c;" onclick="exportExcel()">📊 전체 문장 엑셀(.xlsx) 다운로드</button>
+                        <span style="font-size:0.74rem;color:#94a3b8;">문장 관리 탭에 보이는 순서 그대로, 영어·한국어·카테고리·학습횟수·틀린횟수가 표로 정리됩니다.</span>
                     </div>
                 </details>
 
@@ -2811,6 +2817,43 @@ window.exportData = function() {
     a.download = `english_backup_${new Date().toISOString().slice(0, 10)}.json`;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+
+// 📊 전체 문장 엑셀(.xlsx) 내보내기 — 문장 관리 탭에 보이는 순서(일반 → 마스터) 그대로
+window.exportExcel = function() {
+    if (typeof XLSX === 'undefined') {
+        alert('엑셀 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 다시 시도해주세요.');
+        return;
+    }
+    if (!db.length) { alert('내보낼 문장이 없습니다.'); return; }
+
+    // 관리 탭과 동일한 순서: db 배열 순서를 유지하면서 일반(미마스터) 먼저, 마스터(20회 이상) 나중
+    const normal = []; const master = [];
+    db.forEach(item => {
+        const row = {
+            '영어 문장': item.eng || '',
+            '한국어 뜻': item.kor || '',
+            '카테고리': getCategory(item),
+            '학습 상태': (item.count || 0) >= 20 ? '🔥 마스터' : '학습중',
+            '학습 횟수': item.count || 0,
+            '틀린 횟수': item.wrong_count || 0,
+            '예문(영어)': item.ex_eng || '',
+            '예문(한국어)': item.ex_kor || '',
+            '메모': item.note || ''
+        };
+        if ((item.count || 0) >= 20) master.push(row); else normal.push(row);
+    });
+    const rows = [...normal, ...master];
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [
+        { wch: 38 }, { wch: 30 }, { wch: 14 }, { wch: 10 },
+        { wch: 10 }, { wch: 10 }, { wch: 30 }, { wch: 26 }, { wch: 24 }
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '문장목록');
+    const filename = `영어문장_전체_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    XLSX.writeFile(wb, filename);
 };
 
 // 📂 JSON 가져오기 (복원/추가)
