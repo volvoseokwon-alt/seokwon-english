@@ -95,6 +95,8 @@
             .header, .cat-progress-panel, .ai-analysis-text, .ai-rec-item, .ai-keyword-input, .cal-sum-item, .shadow-fs-trigger, #cat-picker-card, .lfs-btn.lfs-play, .lp-play, .word-btn, #study-cat-filter, .listen-scope-btn, .start-btn { background: var(--card-bg) !important; color: var(--text-color); border-color: var(--border-color) !important; }
             .header { border-bottom-color: var(--border-color) !important; }
             .shadow-sentence-box { box-shadow: none !important; }
+            .shadow-start-title { color: var(--primary-active); }
+            .shadow-start-desc { color: var(--text-muted); }
         }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
@@ -199,6 +201,13 @@
         .word-pool { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; padding-top: 4px; padding-bottom: 8px; border-top: 1px solid #f1f5f9; }
 
         /* 🗣️ 쉐도잉 탭 */
+        .shadow-start-screen { display: flex; align-items: center; justify-content: center; padding: 40px 20px; }
+        .shadow-start-inner { text-align: center; }
+        .shadow-start-emoji { font-size: 3.5rem; margin-bottom: 16px; }
+        .shadow-start-title { font-size: 1.6rem; font-weight: 800; color: var(--primary-active); margin-bottom: 10px; }
+        .shadow-start-desc { font-size: 0.95rem; color: var(--text-muted, #64748b); line-height: 1.6; margin-bottom: 24px; }
+        .shadow-start-btn { background: var(--primary-color); color: #fff; border: none; border-radius: 14px; padding: 16px 48px; font-size: 1.15rem; font-weight: 800; cursor: pointer; transition: transform 0.1s; }
+        .shadow-start-btn:active { transform: scale(0.95); }
         .shadow-dir-badge { align-self: center; background: #ede9fe; color: var(--primary-active); font-weight: bold; font-size: 0.85rem; padding: 5px 14px; border-radius: 20px; margin: 0 16px 10px; text-align: center; }
         .shadow-sentence-box { position: relative; background: #fff; border: none; border-radius: 16px; margin: 0 16px 12px; padding: 28px 18px 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); text-align: center; min-height: 70px; }
         .shadow-sentence-box.is-done { background: #f0fdf6; }
@@ -727,6 +736,15 @@
         <!-- ── 탭: 쉐도잉 ── -->
         <div id="shadow-view" class="view">
             <div id="shadow-main-area">
+                <!-- 시작 화면 (처음 진입 시 바로 시작되지 않고 버튼으로 시작) -->
+                <div class="shadow-start-screen" id="shadow-start-screen">
+                    <div class="shadow-start-inner">
+                        <div class="shadow-start-emoji">🗣️</div>
+                        <div class="shadow-start-title">쉐도잉 연습</div>
+                        <div class="shadow-start-desc">영어 문장을 듣고 따라 말하거나,<br>한국어 힌트를 보고 영어로 말해보세요.</div>
+                        <button class="shadow-start-btn" onclick="startShadowSession()">▶ 시작하기</button>
+                    </div>
+                </div>
                 <div class="cat-filter-bar">
                     <span class="cat-ico">🏷️</span>
                     <button type="button" class="cat-trigger" id="shadow-cat-trigger" onclick="openShadowFilter()">📚 전체</button>
@@ -2185,9 +2203,9 @@ function switchTab(tab) {
         if (recognition && isListening) recognition.stop();
     }
     if (tab !== 'shadow') {
-        stopShadowMic();
+        // 쉐도잉 진행 중이면 자동 일시정지 (마이크+타이머 모두 멈춤)
+        if (shadowItem && !shadowAnsweredAll && !shadowPaused) pauseShadow();
         if (shadowFullscreen) closeShadowFullscreen();
-        if (shadowPaused) { /* 탭 이탈 시 굳이 자동재생 재개하지 않음 - 상태 유지 */ }
     } else {
         initShadowTab();
     }
@@ -4016,6 +4034,8 @@ function updateShadowPauseUI() {
 }
 
 window.nextShadowQuestion = function() {
+    shadowSessionStarted = true;
+    showShadowStartScreen(false);
     stopShadowMic();
     clearShadowTimer();
     if (window.speechSynthesis) window.speechSynthesis.cancel();
@@ -4215,11 +4235,36 @@ function stopShadowMic() {
     stopShadowListeningEffects();
 }
 
+let shadowSessionStarted = false; // 사용자가 시작 버튼을 누른 적이 있는지
+
 function initShadowTab() {
     initShadowRecognition();
     updateShadowTriggerLabel();
-    if (!shadowItem) nextShadowQuestion();
+    if (!shadowSessionStarted) {
+        // 처음 진입: 시작 화면 보여주고 자동 시작하지 않음
+        showShadowStartScreen(true);
+    }
+    // 이미 시작한 적이 있으면 그대로 유지 (일시정지 상태 포함)
 }
+
+function showShadowStartScreen(show) {
+    const startScreen = document.getElementById('shadow-start-screen');
+    const dirBadge = document.getElementById('shadow-dir-badge');
+    const timerTrack = document.getElementById('shadow-timer-track');
+    const card = document.getElementById('shadow-sentence-card');
+    const sttPrev = document.getElementById('shadow-stt-preview');
+    const msgBox = document.getElementById('shadow-msg-box');
+    const actionArea = document.querySelector('#shadow-main-area .shadow-action-area');
+    if (startScreen) startScreen.style.display = show ? 'flex' : 'none';
+    [dirBadge, card, sttPrev, msgBox, actionArea].forEach(el => { if (el) el.style.display = show ? 'none' : ''; });
+    if (timerTrack && show) timerTrack.style.display = 'none';
+}
+
+window.startShadowSession = function() {
+    shadowSessionStarted = true;
+    showShadowStartScreen(false);
+    nextShadowQuestion();
+};
 
 // 쉐도잉 전체화면(몰입) 모드: shadow-main-area DOM을 오버레이로 이동시켰다가 닫을 때 원위치로 복귀
 window.openShadowFullscreen = function() {
