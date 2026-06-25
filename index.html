@@ -222,6 +222,8 @@
         .shadow-hint-row { margin-top: 14px; font-size: 0.95rem; color: #475569; }
         .shadow-hint-label { background: #fde68a; color: #78350f; font-weight: 700; font-size: 0.72rem; padding: 2px 7px; border-radius: 5px; margin-right: 6px; vertical-align: middle; }
         .shadow-result-actions { display: flex; gap: 8px; justify-content: center; margin-top: 16px; }
+        .shadow-master-btn { display: block; margin: 14px auto 0; background: transparent; color: var(--room-color); border: 1px solid var(--room-color); border-radius: 16px; padding: 6px 14px; font-size: 0.78rem; font-weight: 700; cursor: pointer; }
+        .shadow-master-btn:active { transform: scale(0.96); }
         .shadow-result-btn { background: #eef2ff; color: var(--primary-active); border: none; border-radius: 20px; padding: 9px 16px; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
         .shadow-result-btn:active { transform: scale(0.96); }
         .shadow-action-area { display: flex; gap: 8px; padding: 0 16px 10px; }
@@ -764,6 +766,7 @@
                         <span class="shadow-hint-label">힌트</span>
                         <span class="shadow-hint-text" id="shadow-hint-text"></span>
                     </div>
+                    <button class="shadow-master-btn" id="shadow-master-btn" onclick="sendShadowItemToMaster()">🌌 외운 문장으로 보내기</button>
                     <div class="shadow-result-actions" id="shadow-result-actions" style="display:none;">
                         <button class="shadow-result-btn" onclick="replayShadowAudio()">🔊 모범 발음</button>
                         <button class="shadow-result-btn" onclick="nextShadowQuestion()">🔁 다시하기</button>
@@ -3934,25 +3937,15 @@ function escapeHtml(s) {
 function pickShadowItem() {
     let pool = db;
     if (shadowCategories.length > 0) pool = pool.filter(i => shadowCategories.includes(getCategory(i)));
+    // 외운 문장(마스터, count>=20)은 쉐도잉 연습 대상에서 제외
+    pool = pool.filter(i => (i.count || 0) < 20);
     if (pool.length === 0) return null;
     if (pool.length > 1 && shadowItem) {
         const filtered = pool.filter(i => i.id !== shadowItem.id);
         if (filtered.length > 0) pool = filtered;
     }
-    // 우선순위: 1) 덜 연습한 문장(count 낮을수록)  2) 틀린 문장(wrong_count 높을수록)  3) 랜덤
-    const maxCount = Math.max(...pool.map(i => i.count || 0), 1);
-    const weights = pool.map(i => {
-        const countScore = (maxCount - (i.count || 0) + 1);        // count 낮을수록 높은 점수
-        const wrongScore = (i.wrong_count || 0) + 1;               // wrong_count 높을수록 높은 점수
-        return countScore * 3 + wrongScore;                         // count 가중치를 3배로
-    });
-    const totalWeight = weights.reduce((a, b) => a + b, 0);
-    let rand = Math.random() * totalWeight;
-    for (let i = 0; i < pool.length; i++) {
-        rand -= weights[i];
-        if (rand <= 0) return pool[i];
-    }
-    return pool[pool.length - 1];
+    // 완전 랜덤 (가중치 없음 - 전체 문장이 골고루 나오도록)
+    return pool[Math.floor(Math.random() * pool.length)];
 }
 
 // 표준 웹음성(SpeechSynthesis)만 사용 — AI TTS는 쓰지 않음
@@ -4125,6 +4118,22 @@ window.replayShadowAudio = function() {
     if (!shadowItem) return;
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     speakShadowEng(shadowItem.eng, () => {});
+};
+
+// 🌌 외운 문장으로 보내기: 마스터 처리(count>=20) 후 쉐도잉 풀에서 제외, 바로 다음 문제로
+window.sendShadowItemToMaster = async function() {
+    if (!shadowItem) return;
+    const item = db.find(i => i.id === shadowItem.id);
+    if (!item) return;
+    if ((item.count || 0) >= 20) { nextShadowQuestion(); return; } // 이미 마스터면 그냥 다음으로
+
+    if (!confirm(`"${item.eng}"\n이 문장을 외운 문장룸으로 보내고, 쉐도잉 연습에서 제외할까요?`)) return;
+
+    item.count = Math.max(item.count || 0, 20); // 화면 표시용 낙관적 갱신
+    item.last_reviewed = Date.now();
+    await forceMoveToMaster(item.id);
+
+    nextShadowQuestion();
 };
 
 // "정답" 버튼: 포기하고 전체 정답 공개 후 다음 문제로
