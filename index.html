@@ -3838,6 +3838,8 @@ window.toggleRecList = function toggleRecList() {
 // (전체 문장을 항상 보여주고, 순서대로 따라 말하면 왼쪽부터 색이 입혀짐)
 // ════════════════════════════════════════════
 let shadowItem = null;        // 현재 출제된 문장 {id, eng, kor, ...}
+let shadowBag = [];           // 셔플된 문장 id 큐 — 한 바퀴(전체 문장 1번씩) 다 돌면 새로 섞어서 채움
+let shadowBagPoolKey = '';    // 셔플백을 만들 때 기준이 된 풀(카테고리+문장목록) 식별값 — 바뀌면 백을 새로 섞음
 let shadowDir = 'ko2en';      // 'ko2en' (한→영 듣고 영어로 말하기) | 'en2ko' (영어 듣고 따라 말하기)
 let shadowWordStates = [];    // 영어 문장의 단어별 토큰 [{text, isWord, blocked, said}]
 let shadowWordList = [];      // shadowWordStates 중 isWord=true 인 것만 순서대로 모은 배열(진행 인덱스 추적용)
@@ -3934,18 +3936,36 @@ function escapeHtml(s) {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+function shuffleArray(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
 function pickShadowItem() {
     let pool = db;
     if (shadowCategories.length > 0) pool = pool.filter(i => shadowCategories.includes(getCategory(i)));
     // 외운 문장(마스터, count>=20)은 쉐도잉 연습 대상에서 제외
     pool = pool.filter(i => (i.count || 0) < 20);
-    if (pool.length === 0) return null;
-    if (pool.length > 1 && shadowItem) {
-        const filtered = pool.filter(i => i.id !== shadowItem.id);
-        if (filtered.length > 0) pool = filtered;
+    if (pool.length === 0) { shadowBag = []; return null; }
+
+    // 현재 풀(카테고리 선택 + 대상 문장 id 목록)이 바뀌었으면 셔플백을 새로 만듦
+    const poolKey = shadowCategories.join(',') + '|' + pool.map(i => i.id).sort().join(',');
+    if (poolKey !== shadowBagPoolKey || shadowBag.length === 0) {
+        shadowBag = shuffleArray(pool.map(i => i.id));
+        shadowBagPoolKey = poolKey;
+        // 직전 문장이 새로 섞인 백의 맨 앞에 또 걸리면(연속 중복 방지) 한 칸 뒤로 보냄
+        if (shadowItem && shadowBag.length > 1 && shadowBag[0] === shadowItem.id) {
+            [shadowBag[0], shadowBag[1]] = [shadowBag[1], shadowBag[0]];
+        }
     }
-    // 완전 랜덤 (가중치 없음 - 전체 문장이 골고루 나오도록)
-    return pool[Math.floor(Math.random() * pool.length)];
+
+    const nextId = shadowBag.shift(); // 한 바퀴(전체 문장 1번씩) 안에서 순서대로 하나씩 꺼냄
+    const found = pool.find(i => i.id === nextId);
+    return found || pool[Math.floor(Math.random() * pool.length)];
 }
 
 // 표준 웹음성(SpeechSynthesis)만 사용 — AI TTS는 쓰지 않음
