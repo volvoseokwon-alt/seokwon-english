@@ -999,6 +999,118 @@ const sentenceRef = collection(dbFS, "sentences");
 const settingsDocRef = doc(dbFS, "settings", "app_settings");
 const calendarRef = collection(dbFS, "calendar");
 
+// ════════════════════════════════════════════════════════════
+// ✈️ 오프라인 모드 지원: localStorage 자동 백업 + 쓰기 대기열
+// 인터넷이 끊겨도(비행기 모드 등) 마지막으로 받아둔 데이터로 학습 가능.
+// 오프라인 중 발생한 변경(맞춤/틀림/추가/삭제 등)은 대기열에 쌓아두고
+// 온라인 복귀 시 Firestore에 자동으로 다시 전송합니다.
+// ════════════════════════════════════════════════════════════
+const OFFLINE_DB_KEY = "eng_app_offline_db_v1";
+const OFFLINE_SETTINGS_KEY = "eng_app_offline_settings_v1";
+const OFFLINE_QUEUE_KEY = "eng_app_offline_queue_v1";
+
+let isOffline = !navigator.onLine;
+let offlineBannerEl = null;
+
+function loadOfflineCache(key, fallback) {
+    try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+    } catch (e) { return fallback; }
+}
+function saveOfflineCache(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* 용량 초과 등은 무시 */ }
+}
+
+function getOfflineQueue() { return loadOfflineCache(OFFLINE_QUEUE_KEY, []); }
+function pushOfflineQueue(op) {
+    const q = getOfflineQueue();
+    q.push(op);
+    saveOfflineCache(OFFLINE_QUEUE_KEY, q);
+    updateOfflineBanner();
+}
+
+// Firestore 쓰기를 감싸는 안전 래퍼: 오프라인이면 즉시 대기열에 쌓고 성공한 것처럼 반환,
+// 온라인이면 정상적으로 Firestore에 쓰고 실패 시(네트워크 끊김 등)에도 대기열에 백업.
+async function safeSetDoc(ref, data, options) {
+    if (isOffline) {
+        pushOfflineQueue({ type: "set", path: ref.path, data, options: options || null, ts: Date.now() });
+        return;
+    }
+    try {
+        await setDoc(ref, data, options);
+    } catch (e) {
+        pushOfflineQueue({ type: "set", path: ref.path, data, options: options || null, ts: Date.now() });
+    }
+}
+async function safeDeleteDoc(ref) {
+    if (isOffline) {
+        pushOfflineQueue({ type: "delete", path: ref.path, ts: Date.now() });
+        return;
+    }
+    try {
+        await deleteDoc(ref);
+    } catch (e) {
+        pushOfflineQueue({ type: "delete", path: ref.path, ts: Date.now() });
+    }
+}
+
+// 대기열에 쌓인 변경사항들을 실제 Firestore에 순서대로 반영
+async function flushOfflineQueue() {
+    const q = getOfflineQueue();
+    if (!q.length) return;
+    const remaining = [];
+    for (const op of q) {
+        try {
+            const ref = doc(dbFS, ...op.path.split("/"));
+            if (op.type === "set") {
+                await setDoc(ref, op.data, op.options || undefined);
+            } else if (op.type === "delete") {
+                await deleteDoc(ref);
+            }
+        } catch (e) {
+            remaining.push(op); // 실패한 건 다시 대기열에 남겨둠
+        }
+    }
+    saveOfflineCache(OFFLINE_QUEUE_KEY, remaining);
+    updateOfflineBanner();
+}
+
+function updateOfflineBanner() {
+    if (!offlineBannerEl) return;
+    const pending = getOfflineQueue().length;
+    if (isOffline) {
+        offlineBannerEl.style.display = "block";
+        offlineBannerEl.textContent = pending > 0
+            ? `📴 오프라인 모드 (저장된 기록으로 학습 중 · 동기화 대기 ${pending}건)`
+            : "📴 오프라인 모드 (저장된 기록으로 학습 중)";
+    } else if (pending > 0) {
+        offlineBannerEl.style.display = "block";
+        offlineBannerEl.textContent = `🔄 온라인 복귀 — ${pending}건 동기화 중...`;
+    } else {
+        offlineBannerEl.style.display = "none";
+    }
+}
+
+function createOfflineBanner() {
+    const el = document.createElement("div");
+    el.id = "offline-banner";
+    el.style.cssText = "display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#444;color:#fff;text-align:center;font-size:13px;padding:6px 10px;";
+    document.body.prepend(el);
+    offlineBannerEl = el;
+}
+
+window.addEventListener("online", async () => {
+    isOffline = false;
+    updateOfflineBanner();
+    await flushOfflineQueue();
+    updateOfflineBanner();
+});
+window.addEventListener("offline", () => {
+    isOffline = true;
+    updateOfflineBanner();
+});
+
 let db = [];
 let currentWrongCount = 0; 
 let missedThisItem = false; // 이번 문제에서 한 번이라도 틀렸는지 (통과 시 wrong_count 누적용)
@@ -1666,7 +1778,7 @@ async function liveGenerateNote(id, sentence, box) {
         const m = raw.match(/\{[\s\S]*\}/);
         const note = m ? (JSON.parse(m[0]).note || '').trim() : '';
         if (note) {
-            try { await setDoc(doc(sentenceRef, id), { note }, { merge: true }); } catch (e) {}
+            try { await safeSetDoc(doc(sentenceRef, id), { note }, { merge: true }); } catch (e) {}
             // 현재 보고 있는 문장이면 즉시 반영
             if (currentIdx >= 0 && db[currentIdx] && db[currentIdx].id === id) {
                 db[currentIdx].note = note;
@@ -1715,7 +1827,7 @@ ${lines}`;
                 const target = chunk[idx];
                 const note = row.note ? String(row.note).trim() : '';
                 if (target && note) {
-                    try { await setDoc(doc(sentenceRef, target.id), { note }, { merge: true }); saved++; }
+                    try { await safeSetDoc(doc(sentenceRef, target.id), { note }, { merge: true }); saved++; }
                     catch (e) { failed++; }
                 }
             }
@@ -1788,7 +1900,7 @@ window.saveNotesClipboard = async function() {
         const target = noteBatchTargets[idx];
         const note = row.note ? String(row.note).trim() : '';
         if (target && note) {
-            try { await setDoc(doc(sentenceRef, target.id), { note }, { merge: true }); saved++; }
+            try { await safeSetDoc(doc(sentenceRef, target.id), { note }, { merge: true }); saved++; }
             catch (e) { console.warn('노트 저장 실패:', e); }
         }
     }
@@ -1957,17 +2069,25 @@ document.getElementById('voice-select').addEventListener('change', async functio
     if (selectedIdx !== "" && supportedVoices[selectedIdx]) {
         const selectedVoiceName = supportedVoices[selectedIdx].name;
         serverVoiceName = selectedVoiceName;
-        await setDoc(settingsDocRef, { currentVoice: selectedVoiceName }, { merge: true });
+        await safeSetDoc(settingsDocRef, { currentVoice: selectedVoiceName }, { merge: true });
     } else {
         serverVoiceName = "";
-        await setDoc(settingsDocRef, { currentVoice: "" }, { merge: true });
+        await safeSetDoc(settingsDocRef, { currentVoice: "" }, { merge: true });
     }
+    saveOfflineCache(OFFLINE_SETTINGS_KEY, { currentVoice: serverVoiceName });
 });
 
-onSnapshot(settingsDocRef, (docSnap) => {
-    serverVoiceName = (docSnap.exists() && docSnap.data().currentVoice) ? docSnap.data().currentVoice : "";
+if (isOffline) {
+    const cachedSettings = loadOfflineCache(OFFLINE_SETTINGS_KEY, null);
+    serverVoiceName = cachedSettings?.currentVoice || "";
     loadVoices();
-});
+} else {
+    onSnapshot(settingsDocRef, (docSnap) => {
+        serverVoiceName = (docSnap.exists() && docSnap.data().currentVoice) ? docSnap.data().currentVoice : "";
+        saveOfflineCache(OFFLINE_SETTINGS_KEY, { currentVoice: serverVoiceName });
+        loadVoices();
+    });
+}
 
 function speakSentence(text, onEndCallback = null) {
     stopAITTS();
@@ -2126,28 +2246,60 @@ function processSpeechInput(spokenText) {
 }
 
 // ⏳ 데이터 수신 및 실시간 목록 갱신 분기 개선 완료
-onSnapshot(sentenceRef, (snapshot) => {
-    let serverData = [];
-    snapshot.forEach((doc) => { serverData.push({ id: doc.id, ...doc.data() }); });
-    db = serverData;
-    
-    updateReviewBadge();
-    updateMissedReviewBadge();
-
-    // 🛠️ [실시간 동기화 수정]: 백그라운드 분기를 없애고, DB에 변화가 생기면 무조건 리스트를 즉시 리렌더링합니다.[cite: 3]
-    renderLists();
-    renderListenList();
-
-    if (document.getElementById('study-view').classList.contains('active')) {
-        if (isFirstLoad && db.length > 0) { 
-            isFirstLoad = false; 
-            checkStreak(); 
-            initGame(); 
+// ✈️ 오프라인이면 Firestore 리스너를 타지 않고 localStorage 캐시로 즉시 학습 시작
+function startWithOfflineCache() {
+    const cached = loadOfflineCache(OFFLINE_DB_KEY, null);
+    if (cached && cached.length > 0) {
+        db = cached;
+        updateReviewBadge();
+        updateMissedReviewBadge();
+        renderLists();
+        renderListenList();
+        if (document.getElementById('study-view').classList.contains('active')) {
+            if (isFirstLoad && db.length > 0) {
+                isFirstLoad = false;
+                checkStreak();
+                initGame();
+            }
         }
     }
-});
+    updateOfflineBanner();
+}
+
+if (isOffline) {
+    startWithOfflineCache();
+} else {
+    onSnapshot(sentenceRef, (snapshot) => {
+        let serverData = [];
+        snapshot.forEach((doc) => { serverData.push({ id: doc.id, ...doc.data() }); });
+        db = serverData;
+        saveOfflineCache(OFFLINE_DB_KEY, db); // 📴 다음 오프라인 대비 자동 백업
+
+        updateReviewBadge();
+        updateMissedReviewBadge();
+
+        // 🛠️ [실시간 동기화 수정]: 백그라운드 분기를 없애고, DB에 변화가 생기면 무조건 리스트를 즉시 리렌더링합니다.[cite: 3]
+        renderLists();
+        renderListenList();
+
+        if (document.getElementById('study-view').classList.contains('active')) {
+            if (isFirstLoad && db.length > 0) { 
+                isFirstLoad = false; 
+                checkStreak(); 
+                initGame(); 
+            }
+        }
+    }, (error) => {
+        // 🔌 연결 끊김 등으로 리스너 자체가 실패하면 캐시로 폴백
+        console.warn('Firestore 연결 실패, 오프라인 캐시 사용:', error);
+        isOffline = true;
+        startWithOfflineCache();
+    });
+}
 
 document.addEventListener("DOMContentLoaded", function() {
+    createOfflineBanner();
+    updateOfflineBanner();
     // ⌨️ ESC 키로 듣기 전체화면 닫기
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeListenFullscreen(); });
     // 🎧 앨범아트 탭으로도 전체화면 진입
@@ -2275,7 +2427,7 @@ window.mergeCategory = async function() {
     if (!confirm(`"${from}" 문장 ${targets.length}개를 "${to}"(으)로 옮길까요?\n→ "${from}" 카테고리는 사라집니다.`)) return;
     let n = 0;
     for (const it of targets) {
-        try { await setDoc(doc(sentenceRef, it.id), { category: to }, { merge: true }); n++; } catch (e) {}
+        try { await safeSetDoc(doc(sentenceRef, it.id), { category: to }, { merge: true }); n++; } catch (e) {}
     }
     alert(`✅ ${n}개를 "${to}"(으)로 옮겼어요.`);
 };
@@ -2534,7 +2686,7 @@ async function selectWord(word, btnEl) {
 async function recordWrongCount(item) {
     item.wrong_count = (item.wrong_count || 0) + 1;
     try {
-        await setDoc(doc(sentenceRef, item.id), { wrong_count: increment(1) }, { merge: true });
+        await safeSetDoc(doc(sentenceRef, item.id), { wrong_count: increment(1) }, { merge: true });
     } catch (e) { console.error('wrong_count 저장 실패:', e); }
 }
 
@@ -2626,7 +2778,7 @@ async function handleSuccess() {
         
         // ⚠️ count 필드는 보내지 않음 — merge:true라 서버에 이미 저장된 최신 count가 그대로 유지됨
         // (오래된 로컬 count 값을 다시 써서 다른 기기의 갱신을 덮어쓰는 사고 방지)
-        await setDoc(doc(sentenceRef, db[currentIdx].id), {
+        await safeSetDoc(doc(sentenceRef, db[currentIdx].id), {
             eng: db[currentIdx].eng, kor: db[currentIdx].kor, weight: 5, last_reviewed: db[currentIdx].last_reviewed
         }, { merge: true });
     } else {
@@ -2638,7 +2790,7 @@ async function handleSuccess() {
         
         // ⚠️ count는 클라이언트가 들고 있는 값을 그대로 쓰지 않고 increment(1)로 서버 측에서 원자적으로 +1
         // (오래된 기기/탭이 늦게 실행되어도 다른 기기에서 쌓인 최신 count를 덮어쓰지 않음)
-        await setDoc(doc(sentenceRef, db[currentIdx].id), {
+        await safeSetDoc(doc(sentenceRef, db[currentIdx].id), {
             eng: db[currentIdx].eng, kor: db[currentIdx].kor, count: increment(1), weight: 5, last_reviewed: db[currentIdx].last_reviewed
         }, { merge: true });
     }
@@ -2733,7 +2885,7 @@ window.mineAddSelected = async function() {
         if (!c || !c.eng || !c.kor) continue;
         const id = 'mine_' + Date.now() + '_' + n;
         try {
-            await setDoc(doc(sentenceRef, id), {
+            await safeSetDoc(doc(sentenceRef, id), {
                 eng: String(c.eng).trim(), kor: String(c.kor).trim(),
                 category: (c.category ? String(c.category).trim() : '미분류'),
                 count: 0, weight: 5, last_reviewed: Date.now(),
@@ -2784,7 +2936,7 @@ Reply ONLY valid JSON, no markdown:
     }
 
     const newId = "custom_" + Date.now();
-    await setDoc(doc(sentenceRef, newId), {
+    await safeSetDoc(doc(sentenceRef, newId), {
         eng, kor, category: cat, count: 0, weight: 5, last_reviewed: Date.now(),
         ex_eng: example?.ex_eng || '',
         ex_kor: example?.ex_kor || '',
@@ -2802,7 +2954,7 @@ Reply ONLY valid JSON, no markdown:
 }
 
 async function deleteSentence(id) {
-    if(confirm("삭제하시겠습니까?")) { await deleteDoc(doc(sentenceRef, id)); renderLists(); }
+    if(confirm("삭제하시겠습니까?")) { await safeDeleteDoc(doc(sentenceRef, id)); renderLists(); }
 }
 
 // 💾 전체 문장 JSON 내보내기
@@ -2872,7 +3024,7 @@ window.importData = async function(ev) {
         for (const s of arr) {
             if (!s.eng || !s.kor) continue;
             const id = s.id || ('import_' + Date.now() + '_' + n);
-            await setDoc(doc(sentenceRef, id), {
+            await safeSetDoc(doc(sentenceRef, id), {
                 eng: s.eng, kor: s.kor, category: s.category || '미분류',
                 count: typeof s.count === 'number' ? s.count : 0, weight: 5,
                 last_reviewed: s.last_reviewed || Date.now(),
@@ -3143,7 +3295,7 @@ async function applyCategory(val) {
     closeCatPicker();
     if (!id) return;
     try {
-        await setDoc(doc(sentenceRef, id), { category: val || '미분류' }, { merge: true });
+        await safeSetDoc(doc(sentenceRef, id), { category: val || '미분류' }, { merge: true });
     } catch (err) { console.error("카테고리 저장 실패:", err); alert("저장에 실패했습니다."); }
 }
 
@@ -3217,13 +3369,13 @@ document.addEventListener('del-item', (e) => deleteSentence(e.detail));
 // 🛠️ 비동기 서버 업로드 직후 로컬 리스트 강제 동기화 추가로 체감 반응 속도 대폭 개선[cite: 3]
 async function forceMoveToMaster(id) {
     try {
-        await setDoc(doc(sentenceRef, id), { count: 20, last_reviewed: Date.now() }, { merge: true });
+        await safeSetDoc(doc(sentenceRef, id), { count: 20, last_reviewed: Date.now() }, { merge: true });
     } catch (err) { console.error("이동 실패:", err); }
 }
 
 async function forceMoveToStudy(id) {
     try {
-        await setDoc(doc(sentenceRef, id), { count: 0, last_reviewed: Date.now() }, { merge: true });
+        await safeSetDoc(doc(sentenceRef, id), { count: 0, last_reviewed: Date.now() }, { merge: true });
     } catch (err) { console.error("복귀 실패:", err); }
 }
 
@@ -3299,7 +3451,7 @@ document.getElementById('ai-parse-btn').addEventListener('click', function() {
                 try {
                     const newId = "ai_rec_" + Date.now() + "_" + index;
                     const recCat = (document.getElementById('ai-keyword-input').value.trim()) || '미분류';
-                    await setDoc(doc(sentenceRef, newId), {
+                    await safeSetDoc(doc(sentenceRef, newId), {
                         eng: rec.eng, kor: rec.kor, category: recCat, count: 0, weight: 5, last_reviewed: Date.now()
                     });
                     addBtn.className = "ai-add-btn added";
@@ -3341,7 +3493,7 @@ async function updateGoal() {
     renderCal();
     // Firebase에 비동기 저장
     try {
-        await setDoc(doc(calendarRef, key), { count: cnt });
+        await safeSetDoc(doc(calendarRef, key), { count: cnt });
     } catch(e) { console.warn("달력 저장 오류:", e); }
 }
 
