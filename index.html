@@ -2759,10 +2759,13 @@ async function addSentence() {
     addBtn.disabled = true;
     addBtn.textContent = '✨ 예문 생성 중...';
 
-    // AI 예문 생성
+    // AI 예문 생성 (8초 타임아웃 — 실패해도 문장 저장은 계속 진행)
     let example = null;
     try {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 8000);
         const res = await fetch('https://api.anthropic.com/v1/messages', {
+            signal: ctrl.signal,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -2776,11 +2779,12 @@ Reply ONLY valid JSON, no markdown:
                 }]
             })
         });
+        clearTimeout(timer);
         const data = await res.json();
         const raw  = (data.content?.[0]?.text || '{}').replace(/```json|```/g, '').trim();
         example = JSON.parse(raw);
     } catch(e) {
-        console.warn('예문 생성 실패:', e);
+        console.warn('예문 생성 실패(스킵):', e.name === 'AbortError' ? '타임아웃' : e);
     }
 
     const newId = "custom_" + Date.now();
@@ -2868,18 +2872,24 @@ window.importData = async function(ev) {
         const arr = Array.isArray(parsed) ? parsed : (parsed.sentences || []);
         if (!arr.length) { alert('가져올 문장이 없어요.'); ev.target.value = ''; return; }
         if (!confirm(`${arr.length}개 문장을 가져옵니다.\n같은 항목은 덮어쓰고 없으면 새로 추가해요. 진행할까요?`)) { ev.target.value = ''; return; }
+
+        // 10개씩 배치로 병렬 처리 (순차 await 대비 ~10배 빠름)
+        const BATCH = 10;
         let n = 0;
-        for (const s of arr) {
-            if (!s.eng || !s.kor) continue;
-            const id = s.id || ('import_' + Date.now() + '_' + n);
-            await setDoc(doc(sentenceRef, id), {
-                eng: s.eng, kor: s.kor, category: s.category || '미분류',
-                count: typeof s.count === 'number' ? s.count : 0, weight: 5,
-                last_reviewed: s.last_reviewed || Date.now(),
-                wrong_count: typeof s.wrong_count === 'number' ? s.wrong_count : 0,
-                ex_eng: s.ex_eng || '', ex_kor: s.ex_kor || '', ex_ctx: s.ex_ctx || '', note: s.note || ''
-            }, { merge: true });
-            n++;
+        for (let i = 0; i < arr.length; i += BATCH) {
+            const chunk = arr.slice(i, i + BATCH);
+            await Promise.all(chunk.map(async (s, j) => {
+                if (!s.eng || !s.kor) return;
+                const id = s.id || ('import_' + Date.now() + '_' + (i + j));
+                await setDoc(doc(sentenceRef, id), {
+                    eng: s.eng, kor: s.kor, category: s.category || '미분류',
+                    count: typeof s.count === 'number' ? s.count : 0, weight: 5,
+                    last_reviewed: s.last_reviewed || Date.now(),
+                    wrong_count: typeof s.wrong_count === 'number' ? s.wrong_count : 0,
+                    ex_eng: s.ex_eng || '', ex_kor: s.ex_kor || '', ex_ctx: s.ex_ctx || '', note: s.note || ''
+                }, { merge: true });
+                n++;
+            }));
         }
         alert(`✅ ${n}개 문장을 가져왔어요.`);
     } catch (e) { alert('가져오기 실패: ' + (e.message || e)); }
