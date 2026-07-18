@@ -1000,116 +1000,72 @@ const settingsDocRef = doc(dbFS, "settings", "app_settings");
 const calendarRef = collection(dbFS, "calendar");
 
 // ════════════════════════════════════════════════════════════
-// ✈️ 오프라인 모드 지원: localStorage 자동 백업 + 쓰기 대기열
-// 인터넷이 끊겨도(비행기 모드 등) 마지막으로 받아둔 데이터로 학습 가능.
-// 오프라인 중 발생한 변경(맞춤/틀림/추가/삭제 등)은 대기열에 쌓아두고
-// 온라인 복귀 시 Firestore에 자동으로 다시 전송합니다.
+// ✈️ 오프라인 지원 (localStorage 캐시 + 쓰기 대기열)
+// 온라인 → 정상 Firebase 사용 + 데이터를 localStorage에 자동 백업
+// 오프라인 → 캐시 데이터로 학습 / 변경사항은 대기열에 저장 후 복귀 시 자동 동기화
 // ════════════════════════════════════════════════════════════
-const OFFLINE_DB_KEY = "eng_app_offline_db_v1";
-const OFFLINE_SETTINGS_KEY = "eng_app_offline_settings_v1";
-const OFFLINE_QUEUE_KEY = "eng_app_offline_queue_v1";
+const OFFLINE_DB_KEY      = "eng_offline_db_v1";
+const OFFLINE_SETTINGS_KEY= "eng_offline_settings_v1";
+const OFFLINE_QUEUE_KEY   = "eng_offline_queue_v1";
 
 let isOffline = !navigator.onLine;
-let offlineBannerEl = null;
+let _offlineBanner = null;
 
-function loadOfflineCache(key, fallback) {
-    try {
-        const raw = localStorage.getItem(key);
-        return raw ? JSON.parse(raw) : fallback;
-    } catch (e) { return fallback; }
+function _lcGet(key, def) {
+    try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : def; } catch(e){ return def; }
 }
-function saveOfflineCache(key, value) {
-    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* 용량 초과 등은 무시 */ }
+function _lcSet(key, val) {
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch(e){}
 }
+function _getQ()       { return _lcGet(OFFLINE_QUEUE_KEY, []); }
+function _pushQ(op)    { const q=_getQ(); q.push(op); _lcSet(OFFLINE_QUEUE_KEY, q); _updateBanner(); }
 
-function getOfflineQueue() { return loadOfflineCache(OFFLINE_QUEUE_KEY, []); }
-function pushOfflineQueue(op) {
-    const q = getOfflineQueue();
-    q.push(op);
-    saveOfflineCache(OFFLINE_QUEUE_KEY, q);
-    updateOfflineBanner();
-}
-
-// Firestore 쓰기를 감싸는 안전 래퍼: 오프라인이면 즉시 대기열에 쌓고 성공한 것처럼 반환,
-// 온라인이면 정상적으로 Firestore에 쓰고 실패 시(네트워크 끊김 등)에도 대기열에 백업.
-async function safeSetDoc(ref, data, options) {
-    if (isOffline) {
-        pushOfflineQueue({ type: "set", path: ref.path, data, options: options || null, ts: Date.now() });
-        return;
-    }
-    try {
-        await setDoc(ref, data, options);
-    } catch (e) {
-        pushOfflineQueue({ type: "set", path: ref.path, data, options: options || null, ts: Date.now() });
-    }
+async function safeSetDoc(ref, data, opts) {
+    if (isOffline) { _pushQ({type:"set", path:ref.path, data, opts:opts||null, ts:Date.now()}); return; }
+    try { await setDoc(ref, data, opts); }
+    catch(e) { _pushQ({type:"set", path:ref.path, data, opts:opts||null, ts:Date.now()}); }
 }
 async function safeDeleteDoc(ref) {
-    if (isOffline) {
-        pushOfflineQueue({ type: "delete", path: ref.path, ts: Date.now() });
-        return;
-    }
-    try {
-        await deleteDoc(ref);
-    } catch (e) {
-        pushOfflineQueue({ type: "delete", path: ref.path, ts: Date.now() });
-    }
+    if (isOffline) { _pushQ({type:"delete", path:ref.path, ts:Date.now()}); return; }
+    try { await deleteDoc(ref); }
+    catch(e) { _pushQ({type:"delete", path:ref.path, ts:Date.now()}); }
 }
-
-// 대기열에 쌓인 변경사항들을 실제 Firestore에 순서대로 반영
-async function flushOfflineQueue() {
-    const q = getOfflineQueue();
-    if (!q.length) return;
-    const remaining = [];
-    for (const op of q) {
-        try {
-            const ref = doc(dbFS, ...op.path.split("/"));
-            if (op.type === "set") {
-                await setDoc(ref, op.data, op.options || undefined);
-            } else if (op.type === "delete") {
-                await deleteDoc(ref);
-            }
-        } catch (e) {
-            remaining.push(op); // 실패한 건 다시 대기열에 남겨둠
-        }
+async function _flushQ() {
+    const q=_getQ(); if(!q.length) return;
+    const fail=[];
+    for(const op of q){
+        try{
+            const r=doc(dbFS, ...op.path.split("/"));
+            if(op.type==="set")    await setDoc(r, op.data, op.opts||undefined);
+            else if(op.type==="delete") await deleteDoc(r);
+        }catch(e){ fail.push(op); }
     }
-    saveOfflineCache(OFFLINE_QUEUE_KEY, remaining);
-    updateOfflineBanner();
+    _lcSet(OFFLINE_QUEUE_KEY, fail);
+    _updateBanner();
 }
-
-function updateOfflineBanner() {
-    if (!offlineBannerEl) return;
-    const pending = getOfflineQueue().length;
-    if (isOffline) {
-        offlineBannerEl.style.display = "block";
-        offlineBannerEl.textContent = pending > 0
-            ? `📴 오프라인 모드 (저장된 기록으로 학습 중 · 동기화 대기 ${pending}건)`
-            : "📴 오프라인 모드 (저장된 기록으로 학습 중)";
-    } else if (pending > 0) {
-        offlineBannerEl.style.display = "block";
-        offlineBannerEl.textContent = `🔄 온라인 복귀 — ${pending}건 동기화 중...`;
+function _updateBanner() {
+    if(!_offlineBanner) return;
+    const n = _getQ().length;
+    if(isOffline){
+        _offlineBanner.style.display="block";
+        _offlineBanner.textContent = n>0
+            ? `✈️ 오프라인 모드 — 저장된 문장으로 학습 중  (동기화 대기 ${n}건)`
+            : "✈️ 오프라인 모드 — 저장된 문장으로 학습 중";
+    } else if(n>0){
+        _offlineBanner.style.display="block";
+        _offlineBanner.textContent=`🔄 온라인 복귀 — 변경사항 ${n}건 동기화 중...`;
     } else {
-        offlineBannerEl.style.display = "none";
+        _offlineBanner.style.display="none";
     }
 }
-
-function createOfflineBanner() {
-    const el = document.createElement("div");
-    el.id = "offline-banner";
-    el.style.cssText = "display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#444;color:#fff;text-align:center;font-size:13px;padding:6px 10px;";
+function _createBanner(){
+    const el=document.createElement("div");
+    el.style.cssText="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#2a2a2a;color:#fff;text-align:center;font-size:13px;padding:7px 10px;letter-spacing:.3px;";
     document.body.prepend(el);
-    offlineBannerEl = el;
+    _offlineBanner=el;
 }
-
-window.addEventListener("online", async () => {
-    isOffline = false;
-    updateOfflineBanner();
-    await flushOfflineQueue();
-    updateOfflineBanner();
-});
-window.addEventListener("offline", () => {
-    isOffline = true;
-    updateOfflineBanner();
-});
+window.addEventListener("online",  async()=>{ isOffline=false; _updateBanner(); await _flushQ(); _updateBanner(); });
+window.addEventListener("offline", ()=>{ isOffline=true; _updateBanner(); });
 
 let db = [];
 let currentWrongCount = 0; 
@@ -2074,17 +2030,17 @@ document.getElementById('voice-select').addEventListener('change', async functio
         serverVoiceName = "";
         await safeSetDoc(settingsDocRef, { currentVoice: "" }, { merge: true });
     }
-    saveOfflineCache(OFFLINE_SETTINGS_KEY, { currentVoice: serverVoiceName });
+    _lcSet(OFFLINE_SETTINGS_KEY, { currentVoice: serverVoiceName });
 });
 
 if (isOffline) {
-    const cachedSettings = loadOfflineCache(OFFLINE_SETTINGS_KEY, null);
-    serverVoiceName = cachedSettings?.currentVoice || "";
+    const cs = _lcGet(OFFLINE_SETTINGS_KEY, null);
+    serverVoiceName = cs?.currentVoice || "";
     loadVoices();
 } else {
     onSnapshot(settingsDocRef, (docSnap) => {
         serverVoiceName = (docSnap.exists() && docSnap.data().currentVoice) ? docSnap.data().currentVoice : "";
-        saveOfflineCache(OFFLINE_SETTINGS_KEY, { currentVoice: serverVoiceName });
+        _lcSet(OFFLINE_SETTINGS_KEY, { currentVoice: serverVoiceName });
         loadVoices();
     });
 }
@@ -2245,35 +2201,27 @@ function processSpeechInput(spokenText) {
     }
 }
 
-// ⏳ 데이터 수신 및 실시간 목록 갱신 분기 개선 완료
-// ✈️ 오프라인이면 Firestore 리스너를 타지 않고 localStorage 캐시로 즉시 학습 시작
-function startWithOfflineCache() {
-    const cached = loadOfflineCache(OFFLINE_DB_KEY, null);
+// ⏳ 데이터 수신 및 실시간 목록 갱신 / ✈️ 오프라인 폴백 포함
+function _loadFromCache() {
+    const cached = _lcGet(OFFLINE_DB_KEY, null);
     if (cached && cached.length > 0) {
         db = cached;
-        updateReviewBadge();
-        updateMissedReviewBadge();
-        renderLists();
-        renderListenList();
+        updateReviewBadge(); updateMissedReviewBadge();
+        renderLists(); renderListenList();
         if (document.getElementById('study-view').classList.contains('active')) {
-            if (isFirstLoad && db.length > 0) {
-                isFirstLoad = false;
-                checkStreak();
-                initGame();
-            }
+            if (isFirstLoad && db.length > 0) { isFirstLoad=false; checkStreak(); initGame(); }
         }
     }
-    updateOfflineBanner();
+    _updateBanner();
 }
-
 if (isOffline) {
-    startWithOfflineCache();
+    _loadFromCache();
 } else {
     onSnapshot(sentenceRef, (snapshot) => {
         let serverData = [];
         snapshot.forEach((doc) => { serverData.push({ id: doc.id, ...doc.data() }); });
         db = serverData;
-        saveOfflineCache(OFFLINE_DB_KEY, db); // 📴 다음 오프라인 대비 자동 백업
+        _lcSet(OFFLINE_DB_KEY, db);   // ✈️ 다음 오프라인 대비 자동 백업
 
         updateReviewBadge();
         updateMissedReviewBadge();
@@ -2289,17 +2237,14 @@ if (isOffline) {
                 initGame(); 
             }
         }
-    }, (error) => {
-        // 🔌 연결 끊김 등으로 리스너 자체가 실패하면 캐시로 폴백
-        console.warn('Firestore 연결 실패, 오프라인 캐시 사용:', error);
-        isOffline = true;
-        startWithOfflineCache();
+    }, (err) => {
+        console.warn("Firestore 연결 실패 → 캐시 사용", err);
+        isOffline = true; _loadFromCache();
     });
 }
 
 document.addEventListener("DOMContentLoaded", function() {
-    createOfflineBanner();
-    updateOfflineBanner();
+    _createBanner(); _updateBanner();
     // ⌨️ ESC 키로 듣기 전체화면 닫기
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeListenFullscreen(); });
     // 🎧 앨범아트 탭으로도 전체화면 진입
