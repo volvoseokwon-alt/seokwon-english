@@ -831,76 +831,13 @@
                     <button class="add-btn" id="add-btn">+ 문장 추가하기</button>
                 </div>
 
-                <details class="adv-box" id="mine-box">
-                    <summary>✂️ 텍스트에서 문장 뽑기 (이메일·메모·매뉴얼)</summary>
-                    <textarea id="mine-input" class="ai-paste-input" style="min-height:90px;" placeholder="영어 이메일·회의 메모·매뉴얼을 통째로 붙여넣으세요. AI가 쓸 만한 표현을 뽑아 줍니다."></textarea>
-                    <input type="text" id="mine-cat" list="cat-datalist" placeholder="이 묶음 카테고리(선택) — 비우면 AI가 자동 분류" style="margin-top:8px;">
-                    <button class="add-btn" id="mine-extract-btn" style="background:#0d9488;margin-top:8px;" onclick="mineExtract()">🔍 AI로 표현 뽑기</button>
-                    <div id="mine-results"></div>
-                </details>
-
-                <details class="adv-box">
-                    <summary>⚙️ 고급 설정 (AI · 음성 · 노트 · 백업)</summary>
-                    <div class="setting-form" style="margin-bottom:10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px;">
-                        <span style="font-size:0.82rem;font-weight:bold;color:#1d4ed8;">🤖 온라인 AI 노트 설정</span>
-                        <select id="ai-provider" onchange="onProviderChange()">
-                            <option value="puter">Puter (무료·키 불필요·ElevenLabs 음성 · 권장)</option>
-                            <option value="pollinations">Pollinations (무료·키·로그인 불필요)</option>
-                            <option value="gemini">Google Gemini (키 필요 · 음성은 유료)</option>
-                            <option value="openai">OpenAI / ChatGPT (키 필요 · CORS 막힐 수 있음)</option>
-                        </select>
-                        <input type="password" id="ai-key-input" placeholder="API 키 붙여넣기" style="font-family:monospace;">
-                        <input type="text" id="ai-model-input" placeholder="모델명 (비우면 기본값 사용)">
-                        <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;font-weight:bold;color:#1d4ed8;cursor:pointer;">
-                            <input type="checkbox" id="ai-tts-enabled" style="width:18px;height:18px;">🎙️ AI 자연 발음 사용 (영어)
-                        </label>
-                        <div style="display:flex;gap:6px;align-items:center;">
-                            <select id="ai-tts-voice" onchange="saveVoiceOnly()" style="flex:1;"></select>
-                            <button class="add-btn" style="background:#0ea5e9;width:auto;padding:10px 14px;margin:0;white-space:nowrap;" onclick="previewVoice()">🔊 미리듣기</button>
-                        </div>
-                        <button class="add-btn" style="background:#2563eb;" onclick="saveAIKey()">설정 저장</button>
-                        <button class="add-btn" style="background:#0d9488;" onclick="testAIConnection()">🔌 AI 연결 테스트 (텍스트+음성)</button>
-                        <button class="add-btn" id="prewarm-btn" style="background:#7c3aed;" onclick="prewarmTTS()">📥 모든 문장 AI 음성 미리 저장 (딜레이·데이터 절약)</button>
-                        <span id="ai-key-status" style="font-size:0.78rem;color:#64748b;"></span>
-                        <span style="font-size:0.74rem;color:#94a3b8;">※ 키는 이 기기(브라우저)에만 저장되고 서버로 전송되지 않아요. 키는 사용 한도를 걸어두는 걸 권장합니다. (Gemini: aistudio.google.com · OpenAI: platform.openai.com)</span>
-                    </div>
-                    <button class="add-btn" id="gen-notes-btn" style="background:#f59e0b;margin-bottom:8px;" onclick="generateAllNotes()">🤖 온라인 AI로 노트 일괄 생성</button>
-                    <button class="add-btn" id="gen-notes-clip-btn" style="background:#7c3aed;margin-bottom:8px;" onclick="requestNotesClipboard()">📋 (대체) 붙여넣기 방식으로 생성</button>
-                    <div id="note-paste-area" style="display:none;margin-bottom:12px;">
-                        <textarea id="note-paste-input" class="ai-paste-input" placeholder='Claude가 준 JSON 답변을 여기에 붙여넣으세요 [{"n":1,"note":"..."}]'></textarea>
-                        <button class="ai-parse-btn" onclick="saveNotesClipboard()">✅ 노트 저장하기</button>
-                    </div>
-                    <div class="setting-form" style="margin-bottom:10px;background:#fdf4ff;border:1px solid #f0abfc;border-radius:10px;padding:10px;">
-                        <span style="font-size:0.82rem;font-weight:bold;color:#a21caf;">🏷️ 카테고리 병합 / 이름 바꾸기</span>
-                        <select id="merge-from"><option value="">바꿀 카테고리 선택</option></select>
-                        <select id="merge-to"><option value="">→ 옮길(합칠) 카테고리</option></select>
-                        <button class="add-btn" style="background:#c026d3;" onclick="mergeCategory()">병합 / 이름 바꾸기</button>
-                        <span style="font-size:0.74rem;color:#94a3b8;">선택한 카테고리의 모든 문장이 대상 카테고리로 옮겨지고, 원래 카테고리는 사라집니다.</span>
-                    </div>
-                    <div class="setting-form" style="margin-bottom:10px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px;">
-                        <span style="font-size:0.82rem;font-weight:bold;color:#c2410c;">🎧 듣기 옵션</span>
-                        <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;color:#9a3412;cursor:pointer;">
-                            <input type="checkbox" id="wake-lock-enabled" style="width:18px;height:18px;" onchange="saveListenOptions()">📱 화면 꺼짐 방지 (듣기 중 화면 켜둠)
-                        </label>
-                        <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;color:#9a3412;cursor:pointer;">
-                            <input type="checkbox" id="bg-listen-enabled" style="width:18px;height:18px;" onchange="saveListenOptions()">🔒 화면 꺼져도 듣기 계속 (백그라운드 재생)
-                        </label>
-                        <span style="font-size:0.74rem;color:#94a3b8;">백그라운드 재생은 안드로이드에서 가장 잘 되고, 미리 저장된 음성일수록 안정적이에요. 잠금화면에 재생 컨트롤이 뜹니다. (iOS는 제한될 수 있어요)</span>
-                    </div>
-                    <div class="setting-form" style="margin-bottom:4px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px;">
-                        <span style="font-size:0.82rem;font-weight:bold;color:#15803d;">💾 데이터 백업 / 복원</span>
-                        <button class="add-btn" style="background:#16a34a;" onclick="exportData()">💾 전체 문장 JSON 내보내기</button>
-                        <label class="add-btn file-label" style="background:#0891b2;">📂 JSON 가져오기 (복원/추가)
-                            <input type="file" id="import-file" accept="application/json,.json" style="display:none;" onchange="importData(event)">
-                        </label>
-                        <button class="add-btn" style="background:#94a3b8;" onclick="clearTTSCache()">🗑️ 저장된 AI 음성 캐시 비우기</button>
-                    </div>
-                    <div class="setting-form" style="margin-bottom:4px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px;">
-                        <span style="font-size:0.82rem;font-weight:bold;color:#c2410c;">📊 문서로 내보내기</span>
-                        <button class="add-btn" style="background:#ea580c;" onclick="exportExcel()">📊 전체 문장 엑셀(.xlsx) 다운로드</button>
-                        <span style="font-size:0.74rem;color:#94a3b8;">문장 관리 탭에 보이는 순서 그대로, 영어·한국어·카테고리·학습횟수·틀린횟수가 표로 정리됩니다.</span>
-                    </div>
-                </details>
+                <!-- 📋 간단 JSON 붙여넣기 -->
+                <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:14px;margin-bottom:16px;">
+                    <div style="font-size:0.88rem;font-weight:bold;color:#15803d;margin-bottom:8px;">📋 문장 붙여넣기로 추가</div>
+                    <textarea id="simple-paste-input" class="ai-paste-input" style="min-height:80px;" placeholder='[{"eng":"...","kor":"...","category":"..."}]'></textarea>
+                    <button class="add-btn" style="background:#16a34a;margin-top:8px;" onclick="simplePasteImport()">✅ 바로 저장하기</button>
+                    <div id="simple-paste-msg" style="font-size:0.82rem;margin-top:6px;color:#15803d;"></div>
+                </div>
 
                 <h3>📚 학습 중 <span id="normal-count-badge" class="count-badge" style="font-size:0.8rem;"></span></h3>
                 <div class="cat-filter-bar">
@@ -981,7 +918,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import { getFirestore, collection, doc, setDoc, getDoc, deleteDoc, onSnapshot, increment } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { getFirestore, collection, doc, setDoc, getDoc, deleteDoc, onSnapshot, increment, addDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC-P5AutqT8yArZrY-dccSw9N51NPjXxco",
@@ -4318,6 +4255,41 @@ function stopShadowMic() {
 }
 
 let shadowSessionStarted = false; // 사용자가 시작 버튼을 누른 적이 있는지
+
+// 📋 간단 JSON 붙여넣기로 Firebase에 저장
+async function simplePasteImport() {
+    const raw = document.getElementById('simple-paste-input').value.trim();
+    const msg = document.getElementById('simple-paste-msg');
+    if (!raw) { msg.style.color='#dc2626'; msg.textContent = '❗ JSON을 붙여넣어 주세요.'; return; }
+    let arr;
+    try {
+        arr = JSON.parse(raw);
+        if (!Array.isArray(arr)) arr = [arr];
+    } catch(e) {
+        msg.style.color='#dc2626'; msg.textContent = '❗ JSON 형식이 올바르지 않아요.'; return;
+    }
+    msg.style.color='#15803d'; msg.textContent = '저장 중...';
+    let saved = 0;
+    for (const item of arr) {
+        if (!item.eng || !item.kor) continue;
+        const newDoc = {
+            eng: item.eng.trim(),
+            kor: item.kor.trim(),
+            category: item.category || '',
+            wrong_count: 0,
+            solve_count: 0,
+            mastered: false,
+            created_at: Date.now()
+        };
+        try {
+            const newId = "custom_" + Date.now() + "_" + Math.random().toString(36).slice(2,6);
+            await setDoc(doc(sentenceRef, newId), newDoc);
+            saved++;
+        } catch(e) { console.error(e); }
+    }
+    msg.style.color='#15803d'; msg.textContent = `✅ ${saved}개 문장이 저장됐어요!`;
+    document.getElementById('simple-paste-input').value = '';
+}
 
 function initShadowTab() {
     initShadowRecognition();
