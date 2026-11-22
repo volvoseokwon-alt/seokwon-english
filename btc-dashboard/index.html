@@ -178,8 +178,35 @@ header{background:rgba(255,255,255,.97)}
 }
 @media(max-width:340px){.stochSlots{grid-template-columns:1fr}}
 
+
+/* V6 independent horizon IC built from only known historical BTC closes. */
+.periodQuant{border:1px solid #c8d8e8;border-radius:18px;background:linear-gradient(125deg,#f4f9ff,#fff 62%);padding:20px;margin-top:12px;min-width:0}
+.periodQuantHeading{display:flex;justify-content:space-between;align-items:flex-start;gap:9px;flex-wrap:wrap}
+.periodQuant h2{margin:0;font-size:23px;letter-spacing:-.045em;color:#183252}
+.periodQuant h3{margin:0;font-size:14px;letter-spacing:-.01em}
+.periodQuantHint{color:#526785;font-size:12px;line-height:1.65;margin:6px 0 0}
+.periodQuantBadge{border-radius:99px;border:1px solid #c1d0e3;background:#fff;color:#405d7d;font-size:12px;font-weight:750;padding:6px 11px}
+.periodQuantBadge.positive{background:#edf8f1;border-color:#b8d6c3;color:#267a53}
+.periodQuantBadge.negative{background:#fdf1ee;border-color:#dfbcb3;color:#a34834}
+.periodQuantBadge.low{background:#f6f4f1;border-color:#d8d3ca;color:#615a50}
+.periodQuantValueRow{display:flex;gap:18px;align-items:center;flex-wrap:wrap;padding:14px 0 10px}
+.periodQuantValue{font-size:40px;letter-spacing:-.07em;line-height:1;font-weight:850;font-variant-numeric:tabular-nums;color:#1e3654}
+.periodQuantValue.positive{color:#b34e38}.periodQuantValue.negative{color:#275b9e}
+.periodQuantValueInfo{font-size:13px;color:#586d84;line-height:1.7;flex:1;min-width:190px}
+.periodQuantStats{display:flex;gap:8px;flex-wrap:wrap}
+.periodQuantStats span{border:1px solid #dce6f0;background:#fff;padding:7px 10px;border-radius:10px;color:#3f5670;font-size:12px}
+.periodQuantNote{font-size:13px;color:#40536c;line-height:1.7;margin:12px 0}
+.periodQuantDetails{border-top:1px solid #dbe5ef;padding-top:11px;margin-top:10px}
+.periodQuantDetails summary{font-weight:750;color:#233f60;cursor:pointer;font-size:13px}
+.periodQuantDetailRow{display:flex;gap:12px;justify-content:space-between;align-items:center;border-bottom:1px solid #e5ecf2;padding:10px 0}
+.periodQuantDetailRow:last-child{border-bottom:0}
+.periodQuantDetailRow b{font-size:12px;color:#233952;display:block}
+.periodQuantDetailRow span{font-size:11px;color:#647891}
+.periodQuantDetailRow strong{font-size:13px;white-space:nowrap;color:#304c70}
+.periodQuantCaveat{border-top:1px solid #dce7f0;padding-top:10px;margin-top:12px;font-size:11.5px;color:#65768c;line-height:1.65}
+@media(max-width:620px){.periodQuant{padding:15px 12px}.periodQuant h2{font-size:20px}.periodQuantValue{font-size:35px}.periodQuantStats span{font-size:11px}}
 </style></head><body>
-<header><div class="shell nav"><div class="brand"><span class="coin" aria-hidden="true">₿</span>BTC 전망 대시보드 <span style="font-size:10px;opacity:.8">V5</span></div><div class="tools"><span id="network" role="status"></span><button class="refresh phoneOpen" id="showPhone" type="button">휴대폰으로 열기</button><button class="refresh" id="refresh" type="button" aria-label="시세 새로고침"><svg viewBox="0 0 24 24" aria-hidden="true" class="ico"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6 8a7 7 0 0 1 12-2l2 4M4 14l2 4a7 7 0 0 0 12-2"/></svg><span>새로고침</span></button></div></div></header>
+<header><div class="shell nav"><div class="brand"><span class="coin" aria-hidden="true">₿</span>BTC 전망 대시보드 <span style="font-size:10px;opacity:.8">V6</span></div><div class="tools"><span id="network" role="status"></span><button class="refresh phoneOpen" id="showPhone" type="button">휴대폰으로 열기</button><button class="refresh" id="refresh" type="button" aria-label="시세 새로고침"><svg viewBox="0 0 24 24" aria-hidden="true" class="ico"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6 8a7 7 0 0 1 12-2l2 4M4 14l2 4a7 7 0 0 0 12-2"/></svg><span>새로고침</span></button></div></div></header>
 <dialog id="phoneDialog" aria-labelledby="phoneTitle"><h2 id="phoneTitle">휴대폰으로 열기</h2><img id="qrCode" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUgAAAFICAAAAAAXfzjvAAAFNElEQVR4nO3dSW4jRxRAwZbh+1/ZXtUmgUJOQUk2XuxaJIvsh1x81Pj1z58If/30D/i/KCRSSKSQSCGRQiKFRAqJFBIpJFJIpJBIIZFCIoVECokUEikkUkikkEghkUIihUQKiRQSKSRSSKSQSCGRQiKFRP6eveHrcMPjeZez7bydp/k1vL66nfFzq79jtt03rUikkEghkUIihUQKiRQSmc6Rj9Xrcd7mtLd57nR+nP2e2Tx5+/8ZtSKRQiKFRAqJFBIpJFJIZHmOfKzOieP7d+fF2Rx4+nv05x+tSKSQSCGRQiKFRAqJFBLZniNPrc5rb/+ezZPj+06PX59qRSKFRAqJFBIpJFJIpJDIt82Rj9nx7dm8eXt+5Ke0IpFCIoVECokUEikkUkhke448nctm17uszn2z13ePi6s5sxWJFBIpJFJIpJBIIZFCIstzpDpOvHs+5O35k7PfobQikUIihUQKiRQSKSRSSOTr08d9d6+zWX19dQ7suPZ/TCGRQiKFRAqJFBIpJDKdI3fv3/jYvb569vnV/ZC351e+ff9MKxIpJFJIpJBIIZFCIoVEto9r3x4/Pt0vOdv+6fmPs/ly9Xe1IpFCIoVECokUEikkUkhk+z7ku/v7dvcDrm7/7T4/q/tBZ9sb3zfTikQKiRQSKSRSSKSQSCGR6Ry5up9vdR6bzWmz49S35zveHm9/04pECokUEikkUkikkEghkeXzIx+n93Ec/z5u/9PPzz49j7L9kd+skEghkUIihUQKiRQSOX4u4un+xd3t3n5+fH3U+ZG/TCGRQiKFRAqJFBIpJLJ8359PnV94ejxZPT97df/nTCsSKSRSSKSQSCGRQiKFRNh1Nqf7D2ffc3rc/fT7d7fzaEUihUQKiRQSKSRSSKSQCLsP+el11rvXvdze73J3v2nHtb9ZIZFCIoVECokUEikksn1+5Gh3Ttt9jvbuXHg6P95eF96KRAqJFBIpJFJIpJBIIZHj+5CvzmP6uYer893qdeGn96MctSKRQiKFRAqJFBIpJFJIZPu+P4/d+/qsfu70ePcqfX3NoxWJFBIpJFJIpJBIIZFCIsfXaz/0c25Wz6e8PW5+Ox+PWpFIIZFCIoVECokUEikksrw/cnacePdzfxZfX7X7/MXT+1K+aUUihUQKiRQSKSRSSKSQyPF1NqfHnXeff737+u7x6J6v/csUEikkUkikkEghkUIix3Pk27z1dr3KzO19d1bfP76+ux/zTSsSKSRSSKSQSCGRQiKFRD62P1LvT1x9/uLq8xC7f+QvVUikkEghkUIihUQKiUznyN3jxKv325m9PpsTd/cfrs6np8fHW5FIIZFCIoVECokUEikkMp0jb697ub2v5Nt2Z++7fX5j94/8IYVECokUEikkUkikkMj287VnVo8rrz7PZvV7xs/tfu/t3NmKRAqJFBIpJFJIpJBIIZHt8yNv58LZc2RurwOfPZ9m5vS6m1YkUkikkEghkUIihUQKiVw/X/vU2/mPj9PzFHf3c87O31zVikQKiRQSKSRSSKSQSCGRb5sjV59Pc3sd9+7fb+8b+WhFIoVECokUEikkUkikkMj2HHm6f/D0Pjur8+DsOu83t/eNfLQikUIihUQKiRQSKSRSSGR5jjydt3b3F87u9zNeB/623dvncne99g8pJFJIpJBIIZFCIoVEps/XzppWJFJIpJBIIZFCIoVECokUEikkUkikkEghkUIihUQKiRQSKSRSSKSQSCGRQiKFRAqJFBIpJFJIpJBIIZFCIoVECon8C0S596vDPn2zAAAAAElFTkSuQmCC" alt="대시보드 주소 QR 코드"><p>휴대폰 카메라로 코드를 스캔하고<br>같은 ChatGPT 계정으로 로그인하세요.</p><button class="refresh" type="button" id="closePhone">닫기</button></dialog><main class="shell">
 <div id="notice" class="staleNotice" role="status" hidden></div>
 <div class="dateBar"><div class="dateGroup"><label for="asOf">판단 기준일</label><input id="asOf" type="date" required><button id="latestDate" type="button">최신</button><button id="yearAgo" type="button">1년 전</button></div><span class="dateHint" id="dateHint"></span></div>
@@ -195,6 +222,15 @@ header{background:rgba(255,255,255,.97)}
 <div class="sectionHead"><div><h1>보유 기간별 전망</h1><p class="sub" id="readout"></p></div><div class="basis" id="basis"></div></div>
 <div class="holding"><div><div class="holdingLabel">상승 우세가 처음 나타난 보유 기간</div><strong id="holdingTitle"></strong></div><p id="holdingWhy"></p></div>
 <div id="cards" class="cards" role="tablist" aria-label="보유 기간별 전망 선택"></div>
+<section class="periodQuant" id="periodQuant" aria-live="polite" aria-label="보유 기간별 정보계수 퀀트 점수">
+<div class="periodQuantHeading"><div><h2 id="periodQuantTitle">선택 기간의 퀀트 분석</h2><p class="periodQuantHint">선택한 보유 기간의 실제 만기 수익률로 과거 지표의 IC를 다시 계산합니다.</p></div><span class="periodQuantBadge low" id="periodQuantBadge">계산 중</span></div>
+<div class="periodQuantValueRow"><strong class="periodQuantValue" id="periodQuantValue">—</strong><p class="periodQuantValueInfo" id="periodQuantMessage">해당 기간의 계산을 준비합니다.</p></div>
+<div class="periodQuantStats"><span id="periodQuantWindow">학습 기간 —</span><span id="periodQuantIndependent">독립 구간 추정 —</span><span id="periodQuantFactors">유효 지표 —</span></div>
+<p class="periodQuantNote" id="periodQuantNote">가격 기반 퀀트의 판단입니다.</p>
+<details class="periodQuantDetails" id="periodQuantDetails"><summary>지표별 IC·기여도 확인</summary><div id="periodQuantRows"></div></details>
+<div class="periodQuantCaveat">기준일에 이미 만기 결과가 알려진 과거 날짜만 학습합니다. 일별 수익률 구간이 겹치므로 독립 구간은 별도로 추정합니다. 이 점수는 예측 확률이 아니며, 기존 7일 단기 퀀트(스토캐스틱·수급 등 10지표)와 구성이 다른 <b>가격 기반 5지표 기간별 모델</b>입니다.</div>
+</section>
+
 <section id="actionGuide" class="actionGuide" aria-label="선택한 보유 기간에 대한 대응 의견" aria-live="polite">
 <div class="actionHead"><div><div class="actionEyebrow">선택 기간에 따른 대응 참고 · 예측/매매 보장 아님</div><h2 id="actionTitle">지금 어떻게 대응할까?</h2></div><span id="actionStatus" class="actionStatus wait">분석 중</span></div>
 <div class="actionModes" role="group" aria-label="투자 상황 선택"><button type="button" data-action-mode="new" aria-pressed="true">새로 매수하려면</button><button type="button" data-action-mode="hold" aria-pressed="false">이미 보유 중이면</button></div>
@@ -230,14 +266,14 @@ header{background:rgba(255,255,255,.97)}
 <div class="periodEvidenceFoot" id="periodEvidenceFoot"></div>
 </section>
 <section class="detail context"><div class="detailsHeading"><h2>시장 공통 지표 · 기간별 해석</h2><span class="due" id="contextDate"></span></div>
-<p class="explain">이 영역의 원자료는 선택한 기준일의 시장 상태입니다. 기간을 누르면 각 지표의 <b>활용 관점</b>만 달라집니다. 퀀트 점수, 일봉·주봉 신호 자체를 기간별 미래 예측값으로 바꾸지는 않습니다.</p><div class="contextGrid" id="contextMetrics"></div>
+<p class="explain">이 영역의 원자료는 선택한 기준일의 시장 상태입니다. 기간을 눌러도 아래 <b>현재 시장 공통 지표</b> 자체는 달라지지 않습니다. 기간별 퀀트는 별도 카드에서 해당 만기 수익률을 기준으로 직접 다시 계산합니다.</p><div class="contextGrid" id="contextMetrics"></div>
 <div class="contextSource">출처 · Binance Spot, <a href="https://alternative.me/crypto/fear-and-greed-index/" rel="noopener" target="_blank">Alternative.me</a>, DefiLlama, mempool.space</div>
-<details id="legacy" class="cases"><summary>시장 공통 신호 보기 <span class="subtle">· IC 퀀트·모멘텀 원값</span></summary>
-<p class="micro signalIntro">아래 값은 현재 시장을 관찰한 공통 값입니다. 예를 들어 IC 퀀트 점수는 3개월 후나 2년 후 수익률이 아닙니다. 기간별 판단은 바로 위의 보조 판단에서 확인하세요.</p>
+<details id="legacy" class="cases"><summary>현재 시장 공통 신호 보기 <span class="subtle">· 기존 단기 IC·스토캐스틱</span></summary>
+<p class="micro signalIntro">아래 값은 현재 시장을 관찰한 공통 값입니다. 기존 7일 단기 퀀트와 일봉·주봉 지표입니다. 3개월~4년의 기간별 퀀트 점수는 위의 별도 카드에서 확인하세요.</p>
 <div class="signalLegend"><span class="lensChip lensChipUp">상승 우호</span><span class="lensChip lensChipDown">비우호</span><span class="lensChip lensChipMix">중립</span><span>각 카드의 숫자와 근거는 계산 결과에 따라 갱신됩니다.</span></div>
 <div id="signalStatus" class="signalStatus" role="status" aria-live="polite">현재 시장 지표를 불러오는 중…</div>
 <div class="lensGrid" id="lensGrid">
-<article class="lensCard"><div class="lensTop"><span class="lensCategory">종합 관점 · 가중 판단</span><span class="lensChip lensChipIdle" id="lens-quant-badge">계산 중</span></div><h3>퀀트 종합</h3><strong id="lens-quant-value">–</strong><p id="lens-quant-reason">예측력(IC)이 높은 지표에 더 무게를 둔 시장 신호</p><small>참고: 예측력 가중 신호이며, 보유 기간별 상승 확률과는 별개입니다.</small><span class="horizonLensNote" id="lens-quant-horizon"></span></article>
+<article class="lensCard"><div class="lensTop"><span class="lensCategory">종합 관점 · 가중 판단</span><span class="lensChip lensChipIdle" id="lens-quant-badge">계산 중</span></div><h3>기존 단기 퀀트</h3><strong id="lens-quant-value">–</strong><p id="lens-quant-reason">예측력(IC)이 높은 지표에 더 무게를 둔 시장 신호</p><small>참고: 기본 7일 뒤 수익률 기준의 기존 10지표 IC 가중 신호입니다. 기간별 퀀트와 다릅니다.</small><span class="horizonLensNote" id="lens-quant-horizon"></span></article>
 <article class="lensCard"><div class="lensTop"><span class="lensCategory">단기 관점 · 일봉</span><span class="lensChip lensChipIdle" id="lens-stochS-badge">계산 중</span></div><h3>일봉 스토캐스틱</h3><strong id="lens-stochS-value">–</strong><p id="lens-stochS-reason">일봉 스토캐스틱으로 단기 반등과 과열 여부를 확인합니다.</p><small>참고: 반등 신호는 중기 상승 추세를 보장하지 않습니다.</small><span class="horizonLensNote" id="lens-stochS-horizon"></span></article>
 <article class="lensCard"><div class="lensTop"><span class="lensCategory">중기 관점 · 주봉</span><span class="lensChip lensChipIdle" id="lens-stochM-badge">계산 중</span></div><h3>주봉 스토캐스틱</h3><strong id="lens-stochM-value">–</strong><p id="lens-stochM-reason">주봉 스토캐스틱으로 수주~수개월의 추세 방향을 봅니다.</p><small>참고: 단기 반등이 있더라도 주봉 흐름은 약할 수 있습니다.</small><span class="horizonLensNote" id="lens-stochM-horizon"></span></article>
 <article class="lensCard"><div class="lensTop"><span class="lensCategory">패턴 관점 · 과거 유사 사례</span><span class="lensChip lensChipIdle" id="lens-pattern-badge">계산 중</span></div><h3>과거 유사 차트</h3><strong id="lens-pattern-value">–</strong><p id="lens-pattern-reason">최근 가격 흐름과 닮은 과거 구간의 이후 성과를 비교합니다.</p><small>참고: 유사 사례의 성과는 미래 수익을 보장하지 않습니다.</small><span class="horizonLensNote" id="lens-pattern-horizon"></span></article>
@@ -255,8 +291,9 @@ header{background:rgba(255,255,255,.97)}
 <p><b>유사 국면.</b> 과거 매월 기준일과 같은 날짜를 하나씩 고릅니다. 해당 일이 없는 달은 말일을 씁니다. 그날의 종가가 200일 평균 위·아래인지, 90일 수익률이 양수·음수·0인지가 기준일과 같은 경우만 비교합니다. 당시에도 관측 가능했던 값만 사용합니다.</p>
 <p><b>방향 판정.</b> 보유 기간이 끝난 사례 중 65% 이상에서 올랐고 수익률 중앙값이 양수면 ‘상승 우세’, 65% 이상에서 내렸고 중앙값이 음수면 ‘하락 우세’입니다. 나머지는 ‘방향 혼재’입니다. 전체 구간은 동일한 날짜·기간 조건에서 시장 흐름과 관계없이 집계한 값입니다.</p>
 <p><b>판단 유보.</b> 유사 사례가 5개 미만이거나, 기간이 겹치지 않게 고를 수 있는 사례가 3개 미만이면 판정을 유보합니다. 장기 보유 사례는 같은 상승장이나 하락장을 여러 번 포함할 수 있습니다. 65%와 최소 사례 수는 이 화면에서 정한 참고 기준입니다.</p>
-<p><b>대응 의견.</b> 신규 매수·기존 보유 상황별 행동 참고안은 선택 기간의 과거 상승 비율, 수익률 중앙값, 표본 겹침, 최대 하락 및 당시 가격 추세를 우선합니다. 현재 날짜에 한하여 기존 스토캐스틱·퀀트 공통 신호를 진입 시점 점검에 참고합니다. 신호가 모순되거나 표본이 부족할 때는 보수적인 방향으로 표시합니다. 수익과 손실을 예측하거나 개인별 최적 매수액을 산출하는 기능은 아닙니다.</p><p><b>기간별 보조 판단.</b> 상승 비율·중앙값·최대 손실·비중첩 사례 수는 선택한 보유 기간의 과거 유사 사례를 다시 집계한 값입니다. 이에 반해 기존 퀀트(IC 가중), 일봉·주봉 모멘텀, 14일 패턴은 서로 다른 관찰 기간을 사용하는 현재 시장 공통 신호입니다. 과거 날짜를 선택하면 당시 사용 가능한 데이터만으로 기간별 판단을 재현하고 실시간 보조 지표는 숨깁니다.</p>
+<p><b>대응 의견.</b> 신규 매수·기존 보유 상황별 행동 참고안은 선택 기간의 과거 상승 비율, 수익률 중앙값, 표본 겹침, 최대 하락 및 당시 가격 추세를 우선합니다. 선택 기준일의 5지표 기간별 퀀트 IC도 확인하며, 현재 날짜에 한하여 기존 스토캐스틱·단기 퀀트 공통 신호를 진입 시점 점검에 참고합니다. 신호가 모순되거나 표본이 부족할 때는 보수적인 방향으로 표시합니다. 수익과 손실을 예측하거나 개인별 최적 매수액을 산출하는 기능은 아닙니다.</p><p><b>기간별 보조 판단.</b> 상승 비율·중앙값·최대 손실·비중첩 사례 수는 선택한 보유 기간의 과거 유사 사례를 다시 집계한 값입니다. 이에 반해 기존 퀀트(IC 가중), 일봉·주봉 모멘텀, 14일 패턴은 서로 다른 관찰 기간을 사용하는 현재 시장 공통 신호입니다. 그와 별도로 가격 5지표의 IC는 선택한 만기 수익률에 맞추어 재계산합니다. 과거 날짜를 선택하면 당시 사용 가능한 데이터만으로 기간별 판단을 재현하고 실시간 보조 지표는 숨깁니다.</p>
 <p><b>손실 해석.</b> ‘보유 중 가장 큰 손실’은 유사 사례 전체에서 매수 종가 대비 가장 낮았던 일봉 종가 수익률입니다. 장중에는 더 크게 하락할 수 있습니다. 표시한 비율은 과거 빈도이며 미래의 상승 확률이나 손실 한도를 뜻하지 않습니다.</p>
+<p><b>기간별 퀀트(V6).</b> 과거 BTC 종가만으로 50일/200일 평균선 차이, 90일 가격 모멘텀, 30일 가격 모멘텀, 365일 가격 위치, 30일/120일 변동성 차이를 산출합니다. 각 날짜의 3·6·12·24·36·48개월 뒤 종가 수익률(로그 수익률)과의 피어슨 상관계수(IC)를 개별 계산해 가중합 점수로 표시합니다. 실제 달력 기준 만기일을 사용하며, 선택한 기준일 이전에 만기가 끝난 건만 학습합니다. 1년 전 등 과거 날짜에는 그날까지 알 수 있었던 데이터로만 계산합니다. 유효 지표가 3개 미만 또는 겹치지 않는 학습 구간의 추정 수가 5개 미만이면 숫자 대신 ‘근거 부족’으로 표시합니다. IC는 겹치는 관찰치와 국면 변화에 영향을 받으며 실제 예측 적중률을 뜻하지 않습니다.</p>
 <p><b>과거 검증.</b> 선택일까지 만기가 끝난 과거 사례로 당시 전망을 재현합니다. 그 이후 가격은 실제 결과를 채점할 때만 사용합니다. 적중은 상승·하락 방향이 일치한 경우입니다. 혼재·유보는 적중률에서 제외합니다.</p><p id="historyInfo"></p><p><a href="https://github.com/binance/binance-spot-api-docs/blob/master/faqs/market_data_only.md" target="_blank" rel="noopener">바이낸스 시세 데이터 안내</a> · <a href="https://api.upbit.com/v1/ticker?markets=KRW-BTC" target="_blank" rel="noopener">업비트 원화 시세</a></p></div></details>
 </div>
 <div class="footer"><span>과거 가격으로 비교한 참고 지표입니다. 미래 수익은 달라질 수 있습니다.</span><span>Binance Spot · 데이터 지연 시 안내 표시</span></div>
@@ -447,6 +484,7 @@ function showDetail() {
   get('worstDates').textContent=h.worst?(h.worst.loss<0?dotDate(h.worst.date)+' 매수 → '+dotDate(h.worst.lowDate)+' 종가':'모든 사례의 종가가 매수가 이상'):'비교 사례 없음';
   showCases(h);
   renderPeriodEvidence();
+  renderPeriodQuant();
   renderActionGuide();
   const r=model.reference;
   const condition=(r.vsMean>0?'200일선 위':r.vsMean<0?'200일선 아래':'200일선 일치')+' · 90일 수익률 '+(r.momentum>0?'양수':r.momentum<0?'음수':'0');
@@ -474,10 +512,111 @@ function renderPeriodEvidence() {
   get('periodEvidenceFoot').textContent= '해석 주의: '+(overlapRisk!=null?'유사 사례 중 '+overlapRisk+'%가 선택된 비중첩 사례 이외의 겹치는 기간에 해당합니다. ':'')+'상승 비율은 과거 빈도이며 미래 상승 확률이 아닙니다. 기존 IC 퀀트 등 시장 공통 점수와는 다른 분석입니다.';
   const upLine=count?'선택한 '+title+' 과거 사례는 '+h.up+'/'+count+'회 상승, 수익률 중앙값 '+$pct(h.middle)+'입니다.':'선택한 '+title+' 과거 사례가 부족합니다.';
   const viewNote=(id,t)=>{const el=get('lens-'+id+'-horizon');if(el)el.textContent=title+' 관점: '+t};
-  viewNote('quant',upLine+' 현재 IC 가중 점수는 기간과 무관한 시장 공통값입니다.');
+  viewNote('quant',upLine+' 기존 7일 단기 IC 점수는 기간 선택과 무관하며, 기간별 IC는 위의 ‘기간별 퀀트 분석’에서 계산합니다.');
   viewNote('stochS',h.months<=3?'일봉 신호는 진입 시점의 단기 반등·조정을 보는 참고값입니다. '+title+' 만기 수익을 직접 예측하지는 않습니다.':h.months<=12?'일봉 신호는 '+title+' 보유의 진입 타이밍 참고 수준입니다. 보유 중 쉽게 바뀔 수 있습니다.':'현재 일봉 신호만으로 '+title+' 후 방향을 판단할 수 없습니다.');
   viewNote('stochM',h.months<=3?'주봉 신호는 '+title+' 내 추세 점검에 참고할 수 있지만 단독 예측력은 검증되지 않았습니다.':h.months<=12?'주봉 신호는 수개월 추세를 점검하는 참고값입니다. '+title+' 보유 중 반복해서 관찰해야 합니다.':'현재 주봉 신호는 '+title+' 동안 유지된다는 보장이 없습니다. 장기 통계와 분리해 보세요.');
   viewNote('pattern','기존 14일 후 패턴은 '+title+' 보유와 예측 기간이 달라 직접 대체할 수 없습니다. '+upLine);
+}
+
+
+/* V6 — reproducible horizon IC. Only historical BTC closes are used, including in past replay.
+   Features at j are constructed with data <= j. Forward returns are only used if
+   exit day <= as-of day. No live indicator is silently treated as a past signal. */
+const PERIOD_QUANT_NAMES=['50·200일 추세','90일 모멘텀','30일 모멘텀','365일 가격 위치','변동성 변화'];
+const pqCache=new Map();
+const pqClamp=x=>Math.max(-1,Math.min(1,x));
+function pqCorr(p){
+  if(p.length<20)return null;
+  let sx=0,sy=0;for(const [x,y] of p){sx+=x;sy+=y}
+  const mx=sx/p.length,my=sy/p.length;
+  let xy=0,xx=0,yy=0;for(const [x,y] of p){xy+=(x-mx)*(y-my);xx+=(x-mx)**2;yy+=(y-my)**2}
+  return xx>1e-10&&yy>1e-10?xy/Math.sqrt(xx*yy):null;
+}
+function pqFeatures(c){
+  const n=c.length,prefix=[0],logReturns=new Array(n).fill(0),pre=[0],preSq=[0];
+  for(let i=0;i<n;i++){
+    prefix.push(prefix.at(-1)+c[i]);
+    const l=i?Math.log(c[i]/c[i-1]):0;
+    logReturns[i]=l;pre.push(pre.at(-1)+l);preSq.push(preSq.at(-1)+l*l);
+  }
+  const avg=(i,w)=>(prefix[i+1]-prefix[i+1-w])/w;
+  const sd=(i,w)=>{
+    const sum=pre[i+1]-pre[i+1-w],sq=preSq[i+1]-preSq[i+1-w],m=sum/w;
+    return Math.sqrt(Math.max(0,sq/w-m*m));
+  };
+  const out=new Array(n).fill(null);
+  for(let i=365;i<n;i++){
+    let lo=Infinity,hi=-Infinity;
+    for(let j=i-364;j<=i;j++){lo=Math.min(lo,c[j]);hi=Math.max(hi,c[j])}
+    const ma50=avg(i,50),ma200=avg(i,200);
+    const v30=sd(i,30),v120=sd(i,120);
+    out[i]=[
+      Math.tanh(8*(ma50/ma200-1)),
+      Math.tanh(3*Math.log(c[i]/c[i-90])),
+      Math.tanh(5*Math.log(c[i]/c[i-30])),
+      hi>lo?pqClamp((c[i]-lo)/(hi-lo)*2-1):0,
+      Math.tanh(Math.log(Math.max(v30,1e-8)/Math.max(v120,1e-8)))
+    ];
+  }
+  return out;
+}
+function calcPeriodQuant(full,months){
+  const end=full.start+(full.closes.length-1)*DAY;
+  const key=String(full.start)+'|'+full.closes.length+'|'+months+'|'+full.closes.at(-1);
+  if(pqCache.has(key))return pqCache.get(key);
+  if(pqCache.size>40)pqCache.clear();
+  const c=full.closes,n=c.length,asOf=end,ft=pqFeatures(c),hApprox=Math.round(months*365.2425/12);
+  const pair=PERIOD_QUANT_NAMES.map(()=>[]);
+  let rows=0,first=null,last=null;
+  for(let i=365;i<n-1;i++){
+    const entry=full.start+i*DAY,exit=addMonths(entry,months),j=Math.round((exit-full.start)/DAY);
+    if(exit>asOf||j>=n)break;
+    const x=ft[i];if(!x)continue;
+    const ret=100*Math.log(c[j]/c[i]);
+    if(!Number.isFinite(ret))continue;
+    for(let k=0;k<x.length;k++)if(Number.isFinite(x[k]))pair[k].push([x[k],ret]);
+    rows++;if(first==null)first=entry;last=entry;
+  }
+  const effective=rows?Math.floor(rows/hApprox):0;
+  const features=ft[n-1];
+  const parts=PERIOD_QUANT_NAMES.map((name,k)=>{
+    const ic=pqCorr(pair[k]),signal=features?.[k]??null;
+    return {name,ic,signal,contribution:ic==null||signal==null?null:ic*signal,count:pair[k].length};
+  });
+  const usable=parts.filter(p=>p.contribution!=null);
+  const den=usable.reduce((s,p)=>s+Math.abs(p.ic),0);
+  const score=den>0?pqClamp(usable.reduce((s,p)=>s+p.contribution,0)/den):null;
+  const valid=usable.length>=3&&effective>=5&&score!==null;
+  const direction=valid?(score>0.15?'pos':score<-.15?'neg':'neu'):'limited';
+  const result={months,score:valid?score:null,rawScore:score,direction,parts,rows,effective,first,last,den,valid,usable:usable.length};
+  pqCache.set(key,result);return result;
+}
+function renderPeriodQuant(){
+  const r=calcPeriodQuant(view,selected),ttl=horizonName(selected);
+  get('periodQuantTitle').textContent=ttl+' 보유 퀀트 · IC 가중';
+  const badge=get('periodQuantBadge');
+  const labels={pos:'상승 쪽 신호',neg:'하락 쪽 신호',neu:'방향 약함',limited:'근거 부족'};
+  badge.className='periodQuantBadge '+(r.direction==='pos'?'positive':r.direction==='neg'?'negative':'low');
+  badge.textContent=labels[r.direction];
+  const value=get('periodQuantValue');
+  value.className='periodQuantValue '+(r.direction==='pos'?'positive':r.direction==='neg'?'negative':'');
+  value.textContent=r.valid?(r.score>=0?'+':'')+r.score.toFixed(2):'—';
+  const gap=r.rows?Math.round(100*(1-r.effective/r.rows)):100;
+  get('periodQuantWindow').textContent=r.first?dotDate(r.first)+' ~ '+dotDate(r.last):'만기가 완료된 자료 없음';
+  get('periodQuantIndependent').textContent='학습 '+r.rows+'일 / 독립 구간 약 '+r.effective+'개';
+  get('periodQuantFactors').textContent='IC 산출 '+r.usable+'/5개';
+  get('periodQuantMessage').textContent=r.valid?
+    '해당 기간 뒤의 실제 수익률과 5개 가격 지표의 과거 상관관계를 가중합한 값입니다. '+(r.effective<10?'독립 구간이 적어 신뢰도는 낮습니다.':'과거 패턴이 미래에도 유지된다는 보장은 없습니다.'):
+    '겹치지 않는 관찰 구간이 5개 미만이거나 유효 지표가 부족해 신뢰할 만한 IC 점수를 제시하기 어렵습니다.';
+  const top=r.parts.filter(p=>p.contribution!=null).sort((a,b)=>Math.abs(b.contribution)-Math.abs(a.contribution)).slice(0,2);
+  const topText=top.map(p=>p.name+(p.contribution>0?' 상승 기여':p.contribution<0?' 하락 기여':' 중립')).join(' · ');
+  get('periodQuantNote').textContent=r.valid?
+    '주요 기여: '+topText+'. 판단은 선택한 '+ttl+'에 한정됩니다. 겹치는 학습 구간이 많으므로 신뢰도를 보수적으로 해석하세요.':
+    '장기일수록 독립적인 관찰 구간이 줄어듭니다. '+(topText?'참고 상관관계의 주요 항목: '+topText+'. ':'')+'과거 사례 통계와 단기 시장 지표를 구분해 확인하세요.';
+  get('periodQuantRows').innerHTML=r.parts.map(p=>
+    '<div class="periodQuantDetailRow"><div><b>'+safeText(p.name)+'</b><span>IC '+(p.ic==null?'—':(p.ic>=0?'+':'')+p.ic.toFixed(3))+' · 현재 지표 '+(p.signal==null?'—':(p.signal>=0?'+':'')+p.signal.toFixed(2))+'</span></div><strong>기여 '+(p.contribution==null?'—':(p.contribution>=0?'+':'')+p.contribution.toFixed(3))+'</strong></div>'
+  ).join('');
+  return r;
 }
 
 // V5: behavioral recommendations are conditional on selected horizon, price regime,
@@ -492,11 +631,11 @@ function shortSignal(x){return x?.sig==='pos'?'상승 우호':x?.sig==='neg'?'�
 function renderActionGuide(){
   const h=model.horizons.find(r=>r.months===selected);
   if(!h)return;
-  const ttl=horizonName(h.months),q=namedSignal('quant'),d=namedSignal('stochS'),w=namedSignal('stochM');
+  const ttl=horizonName(h.months),q=namedSignal('quant'),d=namedSignal('stochS'),w=namedSignal('stochM'),periodQ=calcPeriodQuant(view,h.months);
   const trend=regimeLabel(model.reference);
   const up=h.signal==='up',down=h.signal==='down',limited=h.signal==='limited',mixed=h.signal==='mixed';
   const weak=(h.nonOverlapping<5),newbuy=actionMode==='new',long=h.months>=24;
-  const caution=(!isPast()&&(q?.sig==='neg'||(d?.sig==='neg'&&w?.sig==='neg')));
+  const caution=(periodQ.valid&&periodQ.direction==='neg')||(!isPast()&&(q?.sig==='neg'||(d?.sig==='neg'&&w?.sig==='neg')));
   const splitSignals=(!isPast()&&d&&w&&d.sig!==w.sig);
   const risk=h.worst&&h.worst.loss<0?$pct(h.worst.loss):'사례 부족';
   let status='조건 확인',statusClass='wait',lead='',now='',check='';
@@ -525,19 +664,24 @@ function renderActionGuide(){
   if(caution&&newbuy&&!limited&&!down){
     now+=' 시장 공통 약세 신호가 있어 특히 일괄 매수는 신중하게 접근하세요.';
   }
+  if(periodQ.valid&&!limited){
+    check+=' '+ttl+' 전용 퀀트 점수 '+(periodQ.score>=0?'+':'')+periodQ.score.toFixed(2)+' ('+({pos:'상승 쪽',neg:'하락 쪽',neu:'중립'}[periodQ.direction])+')도 함께 확인하세요. 독립 구간은 약 '+periodQ.effective+'개입니다.';
+  }else if(!periodQ.valid){
+    check+=' '+ttl+' 전용 퀀트는 학습 구간 부족으로 의견에 반영하지 않았습니다.';
+  }
   if(splitSignals&&!limited){
     check+=' 현재 일봉('+shortSignal(d)+')과 주봉('+shortSignal(w)+')이 달라 방향 확인이 중요합니다.';
   }
   const sample='유사 '+h.count+'건 중 상승 '+h.up+'건 · 비중첩 '+h.nonOverlapping+'건 · 만기 수익률 중앙값 '+$pct(h.middle);
-  const indicator=isPast()?'과거 스토캐스틱 원값은 재현하지 않음':
-    '일봉 '+shortSignal(d)+' / 주봉 '+shortSignal(w)+' / IC 퀀트 '+shortSignal(q);
+  const indicator=(periodQ.valid?'기간별 IC '+(periodQ.score>=0?'+':'')+periodQ.score.toFixed(2):'기간별 IC 근거 부족')+' / '+(isPast()?'과거 스토캐스틱 원값은 재현하지 않음':
+    '일봉 '+shortSignal(d)+' / 주봉 '+shortSignal(w)+' / 단기 IC '+shortSignal(q));
   get('actionTitle').textContent=isPast()?'당시 어떻게 대응했을까?':'지금 어떻게 대응할까?';
   const badge=get('actionStatus');badge.textContent=status;badge.className='actionStatus '+statusClass;
   get('actionLead').textContent=lead;
   get('actionNow').textContent=now;
   get('actionCheck').textContent=check;
   get('actionRisk').textContent='유사 과거 사례의 보유 중 최저 종가 수익률은 '+risk+'입니다. 큰 손실을 감당하기 어렵거나 생활 자금이라면 비중을 낮추거나 진입을 미루세요.';
-  get('actionBasis').textContent='판단 기준: '+ttl+' · '+labels[h.signal]+' · 기준일 가격 추세 '+trend+' · '+sample+' · '+indicator+'. '+(isPast()?'당시까지 알려진 종가만 사용한 가상 대응 의견입니다.':'스토캐스틱·퀀트는 현재 시점의 공통 신호입니다.');
+  get('actionBasis').textContent='판단 기준: '+ttl+' · '+labels[h.signal]+' · 기준일 가격 추세 '+trend+' · '+sample+' · '+indicator+'. '+(isPast()?'당시까지 알려진 종가만 사용한 가상 대응 의견입니다.':'일봉·주봉 스토캐스틱과 기존 단기 IC는 현재 시점 공통 신호입니다.');
 }
 function renderStochState(){
   const d=namedSignal('stochS'),w=namedSignal('stochM');
