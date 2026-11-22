@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="apple-mobile-web-app-capable" content="yes"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#f5f6f8"><title>BTC 전망 대시보드 V5 | 기간별 대응 의견·스토캐스틱</title>
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#f5f6f8"><title>BTC 전망 대시보드 V10 | 기간별 대응 의견·스토캐스틱</title>
 <style>
 :root{color-scheme:light;--bg:#f5f6f8;--paper:#fff;--ink:#172235;--muted:#546277;--line:#dce1e7;--dark:#152337;--gold:#eaaa50;--up:#a73b2e;--down:#215a99;--mixed:#5a516c;--limited:#516176;--radius:17px}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 'Inter','Pretendard','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;word-break:keep-all;overflow-wrap:break-word;-webkit-font-smoothing:antialiased}button,summary{font:inherit}button{cursor:pointer;color:inherit}button:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid #c2781b;outline-offset:3px}header{background:white;border-bottom:1px solid var(--line)}.shell{width:min(1232px,calc(100% - 72px));margin:auto}.nav{min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:12px}.brand,.tools,.tickline,.bitcoin,.symbol,.chartTitle,.sectionHead,.controls,.detailsHeading,.minihead,.legendPair,.footer,.sourceLine{display:flex;align-items:center}.brand{gap:11px;font-size:18px;font-weight:780;letter-spacing:-.055em}.coin{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:#f6a125;color:#172235;font:bold 25px/1 Georgia,serif;transform:rotate(8deg)}.tools{gap:14px;color:var(--muted);font-size:13px}.refresh,.download{border:1px solid #d7dee5;background:#fff;padding:7px 11px;border-radius:8px;display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:620}.refresh:hover,.download:hover{background:#faf3e8}.refresh:disabled{cursor:wait;color:#75808e}.ico{width:16px;height:16px;display:inline-block;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.8;flex:none}
@@ -329,8 +329,15 @@ header{background:rgba(255,255,255,.97)}
 }
 @media(max-width:365px){.simpleTableHead,.simpleRowMain{grid-template-columns:minmax(70px,1.35fr) repeat(6,minmax(0,1fr));gap:2px}.simpleTableHead{font-size:9px}.simpleIndicatorName{font-size:10.5px}.simpleDot{min-height:34px;font-size:15px}}
 
+
+/* V10 : do not hide historically computable direction behind a confidence threshold */
+.simpleDot{position:relative}
+.simpleDot.tentative{opacity:.66;background-image:repeating-linear-gradient(135deg,transparent,transparent 8px,rgba(120,130,147,.06) 8px,rgba(120,130,147,.06) 11px)}
+.simpleDot.tentative::after{content:'·';position:absolute;font-size:12px;right:3px;top:0;line-height:1;color:#67788d}
+.simpleRowNote strong.provisional{color:#8b6640}
+.simpleCoverage{display:block;margin-bottom:4px}
 </style></head><body>
-<header><div class="shell nav"><div class="brand"><span class="coin" aria-hidden="true">₿</span>BTC 전망 대시보드 <span style="font-size:10px;opacity:.8">V9</span></div><div class="tools"><span id="network" role="status"></span><button class="refresh phoneOpen" id="showPhone" type="button">휴대폰으로 열기</button><button class="refresh" id="refresh" type="button" aria-label="시세 새로고침"><svg viewBox="0 0 24 24" aria-hidden="true" class="ico"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6 8a7 7 0 0 1 12-2l2 4M4 14l2 4a7 7 0 0 0 12-2"/></svg><span>새로고침</span></button></div></div></header>
+<header><div class="shell nav"><div class="brand"><span class="coin" aria-hidden="true">₿</span>BTC 전망 대시보드 <span style="font-size:10px;opacity:.8">V10</span></div><div class="tools"><span id="network" role="status"></span><button class="refresh phoneOpen" id="showPhone" type="button">휴대폰으로 열기</button><button class="refresh" id="refresh" type="button" aria-label="시세 새로고침"><svg viewBox="0 0 24 24" aria-hidden="true" class="ico"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6 8a7 7 0 0 1 12-2l2 4M4 14l2 4a7 7 0 0 0 12-2"/></svg><span>새로고침</span></button></div></div></header>
 <dialog id="phoneDialog" aria-labelledby="phoneTitle"><h2 id="phoneTitle">휴대폰으로 열기</h2><img id="qrCode" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUgAAAFICAAAAAAXfzjvAAAFNElEQVR4nO3dSW4jRxRAwZbh+1/ZXtUmgUJOQUk2XuxaJIvsh1x81Pj1z58If/30D/i/KCRSSKSQSCGRQiKFRAqJFBIpJFJIpJBIIZFCIoVECokUEikkUkikkEghkUIihUQKiRQSKSRSSKSQSCGRQiKFRP6eveHrcMPjeZez7bydp/k1vL66nfFzq79jtt03rUikkEghkUIihUQKiRQSmc6Rj9Xrcd7mtLd57nR+nP2e2Tx5+/8ZtSKRQiKFRAqJFBIpJFJIZHmOfKzOieP7d+fF2Rx4+nv05x+tSKSQSCGRQiKFRAqJFBLZniNPrc5rb/+ezZPj+06PX59qRSKFRAqJFBIpJFJIpJDIt82Rj9nx7dm8eXt+5Ke0IpFCIoVECokUEikkUkhke448nctm17uszn2z13ePi6s5sxWJFBIpJFJIpJBIIZFCIstzpDpOvHs+5O35k7PfobQikUIihUQKiRQSKSRSSOTr08d9d6+zWX19dQ7suPZ/TCGRQiKFRAqJFBIpJDKdI3fv3/jYvb569vnV/ZC351e+ff9MKxIpJFJIpJBIIZFCIoVEto9r3x4/Pt0vOdv+6fmPs/ly9Xe1IpFCIoVECokUEikkUkhk+z7ku/v7dvcDrm7/7T4/q/tBZ9sb3zfTikQKiRQSKSRSSKSQSCGR6Ry5up9vdR6bzWmz49S35zveHm9/04pECokUEikkUkikkEghkeXzIx+n93Ec/z5u/9PPzz49j7L9kd+skEghkUIihUQKiRQSOX4u4un+xd3t3n5+fH3U+ZG/TCGRQiKFRAqJFBIpJLJ8359PnV94ejxZPT97df/nTCsSKSRSSKSQSCGRQiKFRNh1Nqf7D2ffc3rc/fT7d7fzaEUihUQKiRQSKSRSSKSQCLsP+el11rvXvdze73J3v2nHtb9ZIZFCIoVECokUEikksn1+5Gh3Ttt9jvbuXHg6P95eF96KRAqJFBIpJFJIpJBIIZHj+5CvzmP6uYer893qdeGn96MctSKRQiKFRAqJFBIpJFJIZPu+P4/d+/qsfu70ePcqfX3NoxWJFBIpJFJIpJBIIZFCIsfXaz/0c25Wz6e8PW5+Ox+PWpFIIZFCIoVECokUEikksrw/cnacePdzfxZfX7X7/MXT+1K+aUUihUQKiRQSKSRSSKSQyPF1NqfHnXeff737+u7x6J6v/csUEikkUkikkEghkUIix3Pk27z1dr3KzO19d1bfP76+ux/zTSsSKSRSSKSQSCGRQiKFRD62P1LvT1x9/uLq8xC7f+QvVUikkEghkUIihUQKiUznyN3jxKv325m9PpsTd/cfrs6np8fHW5FIIZFCIoVECokUEikkMp0jb697ub2v5Nt2Z++7fX5j94/8IYVECokUEikkUkikkMj287VnVo8rrz7PZvV7xs/tfu/t3NmKRAqJFBIpJFJIpJBIIZHt8yNv58LZc2RurwOfPZ9m5vS6m1YkUkikkEghkUIihUQKiVw/X/vU2/mPj9PzFHf3c87O31zVikQKiRQSKSRSSKSQSCGRb5sjV59Pc3sd9+7fb+8b+WhFIoVECokUEikkUkikkMj2HHm6f/D0Pjur8+DsOu83t/eNfLQikUIihUQKiRQSKSRSSGR5jjydt3b3F87u9zNeB/623dvncne99g8pJFJIpJBIIZFCIoVEps/XzppWJFJIpJBIIZFCIoVECokUEikkUkikkEghkUIihUQKiRQSKSRSSKSQSCGRQiKFRAqJFBIpJFJIpJBIIZFCIoVECon8C0S596vDPn2zAAAAAElFTkSuQmCC" alt="대시보드 주소 QR 코드"><p>휴대폰 카메라로 코드를 스캔하고<br>같은 ChatGPT 계정으로 로그인하세요.</p><button class="refresh" type="button" id="closePhone">닫기</button></dialog><main class="shell">
 <div id="notice" class="staleNotice" role="status" hidden></div>
 <div class="dateBar"><div class="dateGroup"><label for="asOf">판단 기준일</label><input id="asOf" type="date" required><button id="latestDate" type="button">최신</button><button id="yearAgo" type="button">1년 전</button></div><span class="dateHint" id="dateHint"></span></div>
@@ -359,12 +366,12 @@ header{background:rgba(255,255,255,.97)}
 <section id="simpleOutlook" class="simpleOutlook" aria-live="polite" aria-label="보조지표별 기간 전망">
   <div class="simpleHead"><div><span class="simpleKicker">과거 비슷한 신호가 나타났던 때를 비교</span><h2 id="simpleTitle">각 지표가 보는 1년 후</h2></div><span class="simpleBadge" id="simpleAsOf">기준일 분석</span></div>
   <p class="simpleHelp">각 지표의 <b>과거 유사 국면</b>이 해당 기간 후 어떻게 끝났는지 살펴봅니다. <b>위에서 기간을 누르거나 아래 칸을 누르면</b> 자세한 설명이 바뀝니다.</p>
-  <div class="simpleLegend"><span class="sigUp">↑ 상승 경향</span><span class="sigDown">↓ 하락 경향</span><span class="sigMixed">↔ 혼재</span><span class="sigNA">? 근거 부족/자료 없음</span></div>
+  <div class="simpleLegend"><span class="sigUp">↑ 상승 경향</span><span class="sigDown">↓ 하락 경향</span><span class="sigMixed">↔ 혼재</span><span class="sigNA">옅은 색: 참고 판단</span><span class="sigNA">? 비교자료 없음</span></div>
   <div id="simpleSummary" class="simpleSummary" role="status">각 지표의 과거 비슷한 신호를 확인하고 있습니다.</div>
   <div class="simpleTableHead" aria-hidden="true"><span>지표</span><span>3개월</span><span>6개월</span><span>1년</span><span>2년</span><span>3년</span><span>4년</span></div>
   <div id="simpleRows" class="simpleRows"></div>
   <details id="simpleMissing" class="simpleMissing"><summary id="simpleMissingTitle">아직 판단할 수 없는 지표</summary><div id="simpleMissingRows"></div></details>
-  <p class="simpleFoot">↑와 ↓는 <b>같은 신호의 과거 비중첩 사례가 8건 이상</b>이고 65% 이상이 같은 방향이었던 경우만 표시합니다. 8건 미만이거나 현재 신호를 확인하지 못하면 판단을 유보합니다. <b>과거 결과이지 미래 상승·하락 확률이 아닙니다.</b> 외부 지표의 과거 원자료 수집이 안 되면 해당 지표는 ‘자료 없음’으로 남습니다.</p>
+  <p class="simpleFoot"><b id="simpleCoverage">가격 기록 범위를 확인하는 중입니다.</b> 현재와 같은 지표 신호가 발생했던 <b>매월 1회 기준의 과거 만기 결과</b>를 표시합니다. 같은 상승장·하락장이 겹치므로 <b>서로 겹치지 않는 사례가 8건 미만인 판단은 색을 연하게 표시</b>하며 신뢰도가 낮습니다. <b>과거 결과이지 미래 확률이 아닙니다.</b> 외부 지표의 당시 원자료가 없으면 결과를 만들지 않습니다.</p>
 </section>
 
 <details class="advancedAll" id="advancedAll"><summary><strong>과거 검증·상세 지표 보기</strong><span>퀀트 점수, 적중률, 보조지표 원자료</span></summary><div class="advancedContents">
@@ -991,6 +998,7 @@ function pqFeatures(c){
   return out;
 }
 function calcPeriodQuant(full,months){
+
   const end=full.start+(full.closes.length-1)*DAY;
   const key=String(full.start)+'|'+full.closes.length+'|'+months+'|'+full.closes.at(-1);
   if(pqCache.has(key))return pqCache.get(key);
@@ -998,7 +1006,6 @@ function calcPeriodQuant(full,months){
   const c=full.closes,n=c.length,asOf=end,ft=pqFeatures(c),hApprox=Math.round(months*365.2425/12);
   const pair=PERIOD_QUANT_NAMES.map(()=>[]);
   let rows=0,first=null,last=null;
-
   for(let i=365;i<n-1;i++){
     const entry=full.start+i*DAY,exit=addMonths(entry,months),j=Math.round((exit-full.start)/DAY);
     if(exit>asOf||j>=n)break;
@@ -1078,70 +1085,83 @@ function simpleSignalAt(id,asOf){
   // Live SMI can supplement the current-day label ONLY after a matching historic feed exists.
   return null;
 }
+/* V10: monthly historical comparisons are informative, NOT statistically independent.
+   Non-overlapping counts remain visible as a confidence warning, not a visibility gate.
+   Every maturity and historical indicator signal is bounded by the as-of date. */
+const simpleVerdictText=r=>r.kind==='na'?'과거 지표 자료 없음':r.kind==='limited'?'비교사례 없음':(r.provisional?'잠정 ':'')+simpleVerdicts[r.kind];
 function simpleCaseStudy(id,months,asOf=view.start+(view.closes.length-1)*DAY){
   const sig=simpleSignalAt(id,asOf);
-  if(!sig)return {kind:'na',n:0,rising:0,signal:null};
-  let pivot=addMonths(asOf,-months);
-  let rising=0,n=0,falling=0,skipped=0;
+  if(!sig)return {kind:'na',n:0,rising:0,falling:0,monthly:0,mRise:0,mFall:0,signal:null,provisional:true};
   const first=view.start+365*DAY;
-  // Choose the latest available matching day, then jump back by a complete holding term.
-  // No later price, signal, or maturity is ever used in the selected-date analysis.
-  while(pivot>=first&&n<200){
-    const v=iaHistoricByDay.get(isoDay(pivot))?.[id];
-    const buy=Math.round((pivot-view.start)/DAY);
-    const end=addMonths(pivot,months),sell=Math.round((end-view.start)/DAY);
-    if(v===sig&&buy>=0&&sell<view.closes.length&&sell>buy){
-      const gain=view.closes[sell]/view.closes[buy]-1;
-      if(gain>0)rising++;if(gain<0)falling++;n++;
-      pivot=addMonths(pivot,-months);
-    }else {pivot-=DAY;skipped++;}
+  const maturityLimit=addMonths(asOf,-months);
+  // Fixed monthly grid, established without examining direction or outcomes.
+  // These cases often overlap and MUST NOT be described as independent trials.
+  let mRise=0,mFall=0,monthly=0;
+  for(let d=first;d<=maturityLimit;d=addMonths(d,1)){
+    const at=iaHistoricByDay.get(isoDay(d))?.[id];
+    if(at!==sig)continue;
+    const buy=Math.round((d-view.start)/DAY),exit=addMonths(d,months),sell=Math.round((exit-view.start)/DAY);
+    if(buy<0||sell<=buy||sell>=view.closes.length)continue;
+    const change=view.closes[sell]/view.closes[buy]-1;
+    if(change>0)mRise++;else if(change<0)mFall++;
+    monthly++;
   }
-  if(n<8)return {kind:'limited',n,rising,falling,signal:sig};
-  const share=rising/n,decline=falling/n;
+  // Signal-matched cases whose completed holding periods do not overlap.
+  let pivot=maturityLimit,rising=0,falling=0,n=0;
+  while(pivot>=first&&n<200){
+    const at=iaHistoricByDay.get(isoDay(pivot))?.[id];
+    const buy=Math.round((pivot-view.start)/DAY),end=addMonths(pivot,months),sell=Math.round((end-view.start)/DAY);
+    if(at===sig&&buy>=0&&sell>buy&&sell<view.closes.length){
+      const gain=view.closes[sell]/view.closes[buy]-1;
+      if(gain>0)rising++;else if(gain<0)falling++;
+      n++;pivot=addMonths(pivot,-months);
+    }else pivot-=DAY;
+  }
+  if(monthly<1)return {kind:'limited',n,rising,falling,monthly,mRise,mFall,signal:sig,provisional:true};
+  const share=mRise/monthly, decline=mFall/monthly;
   const kind=share>=.65?'up':decline>=.65?'down':'mixed';
-  return {kind,n,rising,falling,share,signal:sig};
+  return {kind,n,rising,falling,monthly,mRise,mFall,share,signal:sig,provisional:n<8};
 }
-function simpleLabel(id,m){
-  const r=simpleCaseStudy(id,m);
-  return r;
-}
+function simpleLabel(id,m){return simpleCaseStudy(id,m)}
 function renderSimpleOutlook(){
  const area=get('simpleRows');if(!area)return;
- const m=selected;
+ const m=selected,idx=simpleMonths.indexOf(m);
  get('simpleTitle').textContent='각 지표가 보는 '+horizonName(m)+' 후';
  get('simpleAsOf').textContent=dotDate(model.end)+' 기준';
- const collected=simpleIndicatorGroups.flatMap(g=>g.items.map(([id,name])=>({id,name,group:g.label,results:simpleMonths.map(n=>simpleLabel(id,n))})));
- const present=collected.filter(x=>x.results[simpleMonths.indexOf(m)].kind!=='na');
- const genuine=present.filter(x=>['up','down','mixed'].includes(x.results[simpleMonths.indexOf(m)].kind));
- const up=genuine.filter(x=>x.results[simpleMonths.indexOf(m)].kind==='up').length;
- const down=genuine.filter(x=>x.results[simpleMonths.indexOf(m)].kind==='down').length;
- const regime=model.horizons.find(h=>h.months===m);
- get('simpleSummary').textContent='같은 시장 흐름 전체: '+labels[regime.signal]+' · 유사 '+regime.count+'회 중 '+regime.up+'회 상승 (서로 겹치지 않는 구간 '+regime.nonOverlapping+'회). 개별 지표 중 검증 기준을 넘은 '+genuine.length+'종에서 상승 경향 '+up+'종·하락 경향 '+down+'종. 나머지는 근거 부족 또는 자료 없음.';
- let output='';
- const noDataRows=[];
+ const all=simpleIndicatorGroups.flatMap(g=>g.items.map(([id,name])=>({id,name,group:g.label,results:simpleMonths.map(n=>simpleLabel(id,n))})));
+ const available=all.filter(x=>['up','down','mixed'].includes(x.results[idx].kind));
+ const trusted=available.filter(x=>!x.results[idx].provisional), provisional=available.filter(x=>x.results[idx].provisional);
+ const ups=available.filter(x=>x.results[idx].kind==='up').length,downs=available.filter(x=>x.results[idx].kind==='down').length;
+ const reg=model.horizons.find(h=>h.months===m);
+ get('simpleSummary').textContent='전체 유사 시장: '+labels[reg.signal]+' (과거 '+reg.count+'번 중 '+reg.up+'번 상승). 현재 데이터로 비교할 수 있는 개별 지표 '+available.length+'종: 상승 경향 '+ups+'종, 하락 경향 '+downs+'종. 이 중 비중첩 구간 기준 충족 '+trusted.length+'종·참고 수준 '+provisional.length+'종. 연한 색은 검증 사례 부족으로 신뢰도가 낮습니다.';
+ const firstAvailable=isoDay(view.start+365*DAY),latest=isoDay(view.start+(view.closes.length-1)*DAY);
+ get('simpleCoverage').textContent='저장된 BTC 가격: '+isoDay(series.start)+' ~ '+latest+' (기간별 지표 분석은 약 '+firstAvailable+' 이후)';
+ let output='',missingRows=[];
  for(const g of simpleIndicatorGroups){
-  const ready=g.items.filter(([id])=>collected.find(x=>x.id===id).results[simpleMonths.indexOf(m)].kind!=='na');
-  if(ready.length)output+='<div class="simpleGroupHeading">'+safeText(g.label)+'</div>';
+  const ready=g.items.some(([id])=>all.find(x=>x.id===id).results[idx].kind!=='na');
+  if(ready)output+='<div class="simpleGroupHeading">'+safeText(g.label)+'</div>';
   for(const [id,name] of g.items){
-    const item=collected.find(x=>x.id===id),r=item.results[simpleMonths.indexOf(m)];
-    const cell=item.results.map((one,index)=>{
-      const months=simpleMonths[index], icon=one.kind==='up'?'↑':one.kind==='down'?'↓':one.kind==='mixed'?'↔':'?';
-      const tooltip=horizonName(months)+' · '+simpleVerdicts[one.kind]+' · '+(one.n?'서로 겹치지 않는 과거 '+one.n+'건':'자료 없음');
-      return '<button class="simpleDot '+one.kind+'" data-simple-months="'+months+'" aria-pressed="'+(months===m)+'" title="'+safeText(name+' · '+tooltip)+'" aria-label="'+safeText(name+' '+tooltip)+'">'+icon+'</button>';
+    const item=all.find(x=>x.id===id),r=item.results[idx];
+    const cells=item.results.map((one,index)=>{
+      const months=simpleMonths[index],icon=one.kind==='up'?'↑':one.kind==='down'?'↓':one.kind==='mixed'?'↔':'?';
+      const label=simpleVerdictText(one);
+      const tip=horizonName(months)+' · '+label+' · 월별 과거 '+one.monthly+'건 (상호 중복 가능), 기간 비중첩 '+one.n+'건';
+      return '<button class="simpleDot '+one.kind+(one.provisional&&one.kind!=='na'&&one.kind!=='limited'?' tentative':'')+'" data-simple-months="'+months+'" aria-pressed="'+(months===m)+'" title="'+safeText(name+' · '+tip)+'" aria-label="'+safeText(name+' '+tip)+'">'+icon+'</button>';
     }).join('');
     const sig=r.signal?'당시 '+simpleNames[r.signal]:'당시 신호를 확인하지 못함';
-    const note=r.kind==='na'?'해당 기준일의 과거 신호 원자료가 없어 전망을 내지 않습니다.':
-     r.n===0?'비슷한 신호에서 만기가 끝난 독립 구간이 없습니다.':
-     '과거 같은 신호를 보인 '+r.n+'개 독립 구간 중 '+r.rising+'회 상승, '+r.falling+'회 하락. '+(r.kind==='limited'?'사례가 적어 방향 판단 유보.':'과거에는 '+simpleVerdicts[r.kind]+'.');
-    const row='<div class="simpleRow" data-simple-id="'+id+'"><div class="simpleRowMain"><div class="simpleIndicatorName">'+safeText(name)+'</div>'+cell+'</div><p class="simpleRowNote"><strong>'+simpleVerdicts[r.kind]+'</strong> · '+note+'</p><div class="simpleRowSub">'+safeText(sig)+' · '+safeText(horizonName(m))+' 후 비교</div></div>';
-    if(r.kind==='na')noDataRows.push(row);else output+=row;
+    let note;
+    if(r.kind==='na')note='과거 해당 지표의 신호 원자료가 없어 가격 기록만으로는 재현할 수 없습니다.';
+    else if(r.kind==='limited')note='현재와 같은 지표 신호가 발생한 뒤 '+horizonName(m)+'의 결과가 확정된 비교사례가 없습니다.';
+    else note='월별 유사 신호 '+r.monthly+'개 중 '+r.mRise+'개 상승·'+r.mFall+'개 하락 (보유 구간이 서로 겹침). '+
+      '비중첩 사례 '+r.n+'개 중 '+r.rising+'개 상승. '+(r.provisional?'비중첩 사례가 적어 참고용 판단입니다.':'비중첩 사례도 기준 수를 충족했습니다.');
+    const row='<div class="simpleRow" data-simple-id="'+id+'"><div class="simpleRowMain"><div class="simpleIndicatorName">'+safeText(name)+'</div>'+cells+'</div><p class="simpleRowNote"><strong'+(r.provisional?' class="provisional"':'')+'>'+simpleVerdictText(r)+'</strong> · '+note+'</p><div class="simpleRowSub">'+safeText(sig)+' · '+safeText(horizonName(m))+' 후 비교</div></div>';
+    if(r.kind==='na')missingRows.push(row);else output+=row;
   }
  }
  area.innerHTML=output;
- const missing=get('simpleMissing');
- missing.hidden=noDataRows.length===0;
- get('simpleMissingTitle').textContent='원자료가 없어 판단하지 못한 지표 '+noDataRows.length+'종 · 펼쳐보기';
- get('simpleMissingRows').innerHTML=noDataRows.join('');
+ const missing=get('simpleMissing');missing.hidden=missingRows.length===0;
+ get('simpleMissingTitle').textContent='현재 날짜의 과거 원자료가 없는 지표 '+missingRows.length+'종 · 펼쳐보기';
+ get('simpleMissingRows').innerHTML=missingRows.join('');
 }
 for(const container of [get('simpleRows'),get('simpleMissingRows')])container.addEventListener('click',e=>{
   const b=e.target.closest('button[data-simple-months]');
