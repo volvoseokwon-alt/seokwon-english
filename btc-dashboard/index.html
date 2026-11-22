@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="apple-mobile-web-app-capable" content="yes"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#f5f6f8"><title>BTC 전망 대시보드 V4 | 선택 기간별 지표</title>
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#f5f6f8"><title>BTC 전망 대시보드 V5 | 기간별 대응 의견·스토캐스틱</title>
 <style>
 :root{color-scheme:light;--bg:#f5f6f8;--paper:#fff;--ink:#172235;--muted:#546277;--line:#dce1e7;--dark:#152337;--gold:#eaaa50;--up:#a73b2e;--down:#215a99;--mixed:#5a516c;--limited:#516176;--radius:17px}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 'Inter','Pretendard','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;word-break:keep-all;overflow-wrap:break-word;-webkit-font-smoothing:antialiased}button,summary{font:inherit}button{cursor:pointer;color:inherit}button:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid #c2781b;outline-offset:3px}header{background:white;border-bottom:1px solid var(--line)}.shell{width:min(1232px,calc(100% - 72px));margin:auto}.nav{min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:12px}.brand,.tools,.tickline,.bitcoin,.symbol,.chartTitle,.sectionHead,.controls,.detailsHeading,.minihead,.legendPair,.footer,.sourceLine{display:flex;align-items:center}.brand{gap:11px;font-size:18px;font-weight:780;letter-spacing:-.055em}.coin{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:#f6a125;color:#172235;font:bold 25px/1 Georgia,serif;transform:rotate(8deg)}.tools{gap:14px;color:var(--muted);font-size:13px}.refresh,.download{border:1px solid #d7dee5;background:#fff;padding:7px 11px;border-radius:8px;display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:620}.refresh:hover,.download:hover{background:#faf3e8}.refresh:disabled{cursor:wait;color:#75808e}.ico{width:16px;height:16px;display:inline-block;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.8;flex:none}
@@ -130,8 +130,56 @@ header{background:rgba(255,255,255,.97)}
 .context .contextItem small.contextRelevance{display:block;border-top:1px solid #e6eaf0;margin-top:9px;padding-top:8px;color:#365e87;font-size:11px;line-height:1.5}
 @media(max-width:620px){.periodLensGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.periodLens{padding:11px 9px}.periodLens strong{font-size:18px}.periodLens p{font-size:11.5px}.periodEvidence{padding:15px 12px}.periodEvidence .detailsHeading h2{font-size:21px}}
 @media(max-width:340px){.periodLensGrid{grid-template-columns:1fr}}
+
+/* V5: a period-specific, inspectable action framework and visible stochastic cards. */
+.actionGuide{margin-top:12px;border:1px solid #d9bd88;border-radius:17px;padding:19px 19px 17px;background:linear-gradient(130deg,#fff8ec 0%,#fffdf9 56%,#fff 100%)}
+.actionHead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.actionHead h2{font-size:23px;letter-spacing:-.045em;margin:2px 0 0}
+.actionEyebrow{font-size:12px;color:#80613a;font-weight:750;letter-spacing:.01em}
+.actionStatus{display:inline-flex;align-items:center;border:1px solid #e0ceaf;border-radius:99px;background:#fff;color:#74522d;font-weight:790;font-size:13px;padding:5px 11px}
+.actionStatus.wait{border-color:#dbdee6;background:#f1f4f8;color:#4a5d76}
+.actionStatus.care{border-color:#e8c1b5;background:#fff3ee;color:#8b4432}
+.actionStatus.plan{border-color:#b9d6cc;background:#f0faf5;color:#286c53}
+.actionModes{display:flex;gap:7px;margin-top:15px;max-width:360px}
+.actionModes button{flex:1;border:1px solid #e0d8cd;background:#fff;padding:9px 12px;border-radius:10px;font-size:14px;font-weight:750;min-height:42px}
+.actionModes button[aria-pressed="true"]{border-color:#6b563b;background:#70583c;color:#fff}
+.actionLead{font-size:17px;line-height:1.62;font-weight:770;color:#302a23;margin:14px 0}
+.actionSteps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.actionStep{border:1px solid #eadfcc;border-radius:12px;padding:11px 12px;background:rgba(255,255,255,.93);min-width:0}
+.actionStep b{display:block;color:#7b623c;font-size:12px;margin-bottom:5px}
+.actionStep p{font-size:13px;color:#35465b;margin:0;line-height:1.62}
+.actionBasis{font-size:12px;line-height:1.7;color:#56667b;margin:13px 0 2px}
+.actionNotice{font-size:11px;color:#697688;line-height:1.6;display:block;border-top:1px solid #eadfcc;padding-top:10px;margin-top:10px}
+.stochFocus{margin-top:12px;border:1px solid #ccdae9;background:#fafdff}
+.stochFocus .detailsHeading h2{font-size:22px}
+.stochFocusIntro{margin:5px 0 12px;font-size:13px;color:#58708a;line-height:1.65}
+.stochSlots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.stochSlots .lensCard{border-left:4px solid #7395ba!important;padding:13px}
+.stochSlots .lensCard:nth-child(2){border-left-color:#a18aa9!important}
+.stochSlots .lensCard small{display:none}
+.stochSlots .horizonLensNote{margin-top:5px;padding:8px 9px}
+.stochFoot{margin:9px 0 0;font-size:12px;color:#627489;line-height:1.6}
+@media(max-width:700px){
+ .actionGuide{padding:14px 12px}
+ .actionHead h2{font-size:21px}
+ .actionSteps{grid-template-columns:1fr;gap:6px}
+ .actionStep{padding:10px 11px}
+ .actionLead{font-size:16px}
+ .actionStep p{font-size:12.5px}
+ .stochFocus{padding:15px 12px}
+ .stochSlots{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+ .stochSlots .lensCard{padding:10px 9px;gap:4px}
+ .stochSlots .lensCard h3{font-size:14px}
+ .stochSlots .lensCategory{font-size:10px}
+ .stochSlots .lensCard strong{font-size:15px}
+ .stochSlots .lensChip{font-size:10px;padding:3px 7px}
+ .stochSlots .lensCard p{font-size:11.5px;line-height:1.45}
+ .stochSlots .horizonLensNote{font-size:11px;padding:6px 7px}
+}
+@media(max-width:340px){.stochSlots{grid-template-columns:1fr}}
+
 </style></head><body>
-<header><div class="shell nav"><div class="brand"><span class="coin" aria-hidden="true">₿</span>BTC 전망 대시보드 <span style="font-size:10px;opacity:.8">V4</span></div><div class="tools"><span id="network" role="status"></span><button class="refresh phoneOpen" id="showPhone" type="button">휴대폰으로 열기</button><button class="refresh" id="refresh" type="button" aria-label="시세 새로고침"><svg viewBox="0 0 24 24" aria-hidden="true" class="ico"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6 8a7 7 0 0 1 12-2l2 4M4 14l2 4a7 7 0 0 0 12-2"/></svg><span>새로고침</span></button></div></div></header>
+<header><div class="shell nav"><div class="brand"><span class="coin" aria-hidden="true">₿</span>BTC 전망 대시보드 <span style="font-size:10px;opacity:.8">V5</span></div><div class="tools"><span id="network" role="status"></span><button class="refresh phoneOpen" id="showPhone" type="button">휴대폰으로 열기</button><button class="refresh" id="refresh" type="button" aria-label="시세 새로고침"><svg viewBox="0 0 24 24" aria-hidden="true" class="ico"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6 8a7 7 0 0 1 12-2l2 4M4 14l2 4a7 7 0 0 0 12-2"/></svg><span>새로고침</span></button></div></div></header>
 <dialog id="phoneDialog" aria-labelledby="phoneTitle"><h2 id="phoneTitle">휴대폰으로 열기</h2><img id="qrCode" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUgAAAFICAAAAAAXfzjvAAAFNElEQVR4nO3dSW4jRxRAwZbh+1/ZXtUmgUJOQUk2XuxaJIvsh1x81Pj1z58If/30D/i/KCRSSKSQSCGRQiKFRAqJFBIpJFJIpJBIIZFCIoVECokUEikkUkikkEghkUIihUQKiRQSKSRSSKSQSCGRQiKFRP6eveHrcMPjeZez7bydp/k1vL66nfFzq79jtt03rUikkEghkUIihUQKiRQSmc6Rj9Xrcd7mtLd57nR+nP2e2Tx5+/8ZtSKRQiKFRAqJFBIpJFJIZHmOfKzOieP7d+fF2Rx4+nv05x+tSKSQSCGRQiKFRAqJFBLZniNPrc5rb/+ezZPj+06PX59qRSKFRAqJFBIpJFJIpJDIt82Rj9nx7dm8eXt+5Ke0IpFCIoVECokUEikkUkhke448nctm17uszn2z13ePi6s5sxWJFBIpJFJIpJBIIZFCIstzpDpOvHs+5O35k7PfobQikUIihUQKiRQSKSRSSOTr08d9d6+zWX19dQ7suPZ/TCGRQiKFRAqJFBIpJDKdI3fv3/jYvb569vnV/ZC351e+ff9MKxIpJFJIpJBIIZFCIoVEto9r3x4/Pt0vOdv+6fmPs/ly9Xe1IpFCIoVECokUEikkUkhk+z7ku/v7dvcDrm7/7T4/q/tBZ9sb3zfTikQKiRQSKSRSSKSQSCGR6Ry5up9vdR6bzWmz49S35zveHm9/04pECokUEikkUkikkEghkeXzIx+n93Ec/z5u/9PPzz49j7L9kd+skEghkUIihUQKiRQSOX4u4un+xd3t3n5+fH3U+ZG/TCGRQiKFRAqJFBIpJLJ8359PnV94ejxZPT97df/nTCsSKSRSSKSQSCGRQiKFRNh1Nqf7D2ffc3rc/fT7d7fzaEUihUQKiRQSKSRSSKSQCLsP+el11rvXvdze73J3v2nHtb9ZIZFCIoVECokUEikksn1+5Gh3Ttt9jvbuXHg6P95eF96KRAqJFBIpJFJIpJBIIZHj+5CvzmP6uYer893qdeGn96MctSKRQiKFRAqJFBIpJFJIZPu+P4/d+/qsfu70ePcqfX3NoxWJFBIpJFJIpJBIIZFCIsfXaz/0c25Wz6e8PW5+Ox+PWpFIIZFCIoVECokUEikksrw/cnacePdzfxZfX7X7/MXT+1K+aUUihUQKiRQSKSRSSKSQyPF1NqfHnXeff737+u7x6J6v/csUEikkUkikkEghkUIix3Pk27z1dr3KzO19d1bfP76+ux/zTSsSKSRSSKSQSCGRQiKFRD62P1LvT1x9/uLq8xC7f+QvVUikkEghkUIihUQKiUznyN3jxKv325m9PpsTd/cfrs6np8fHW5FIIZFCIoVECokUEikkMp0jb697ub2v5Nt2Z++7fX5j94/8IYVECokUEikkUkikkMj287VnVo8rrz7PZvV7xs/tfu/t3NmKRAqJFBIpJFJIpJBIIZHt8yNv58LZc2RurwOfPZ9m5vS6m1YkUkikkEghkUIihUQKiVw/X/vU2/mPj9PzFHf3c87O31zVikQKiRQSKSRSSKSQSCGRb5sjV59Pc3sd9+7fb+8b+WhFIoVECokUEikkUkikkMj2HHm6f/D0Pjur8+DsOu83t/eNfLQikUIihUQKiRQSKSRSSGR5jjydt3b3F87u9zNeB/623dvncne99g8pJFJIpJBIIZFCIoVEps/XzppWJFJIpJBIIZFCIoVECokUEikkUkikkEghkUIihUQKiRQSKSRSSKSQSCGRQiKFRAqJFBIpJFJIpJBIIZFCIoVECon8C0S596vDPn2zAAAAAElFTkSuQmCC" alt="대시보드 주소 QR 코드"><p>휴대폰 카메라로 코드를 스캔하고<br>같은 ChatGPT 계정으로 로그인하세요.</p><button class="refresh" type="button" id="closePhone">닫기</button></dialog><main class="shell">
 <div id="notice" class="staleNotice" role="status" hidden></div>
 <div class="dateBar"><div class="dateGroup"><label for="asOf">판단 기준일</label><input id="asOf" type="date" required><button id="latestDate" type="button">최신</button><button id="yearAgo" type="button">1년 전</button></div><span class="dateHint" id="dateHint"></span></div>
@@ -147,6 +195,21 @@ header{background:rgba(255,255,255,.97)}
 <div class="sectionHead"><div><h1>보유 기간별 전망</h1><p class="sub" id="readout"></p></div><div class="basis" id="basis"></div></div>
 <div class="holding"><div><div class="holdingLabel">상승 우세가 처음 나타난 보유 기간</div><strong id="holdingTitle"></strong></div><p id="holdingWhy"></p></div>
 <div id="cards" class="cards" role="tablist" aria-label="보유 기간별 전망 선택"></div>
+<section id="actionGuide" class="actionGuide" aria-label="선택한 보유 기간에 대한 대응 의견" aria-live="polite">
+<div class="actionHead"><div><div class="actionEyebrow">선택 기간에 따른 대응 참고 · 예측/매매 보장 아님</div><h2 id="actionTitle">지금 어떻게 대응할까?</h2></div><span id="actionStatus" class="actionStatus wait">분석 중</span></div>
+<div class="actionModes" role="group" aria-label="투자 상황 선택"><button type="button" data-action-mode="new" aria-pressed="true">새로 매수하려면</button><button type="button" data-action-mode="hold" aria-pressed="false">이미 보유 중이면</button></div>
+<p id="actionLead" class="actionLead">선택한 보유 기간을 기준으로 판단 중입니다.</p>
+<div class="actionSteps"><div class="actionStep"><b>내가 할 수 있는 행동</b><p id="actionNow">–</p></div><div class="actionStep"><b>판단을 바꿀 조건</b><p id="actionCheck">–</p></div><div class="actionStep"><b>위험 관리</b><p id="actionRisk">–</p></div></div>
+<p class="actionBasis" id="actionBasis"></p>
+<small class="actionNotice">개인 자산·손실 감내 수준을 알 수 없어 확정적인 매수·매도 지시는 제공하지 않습니다. 과거 빈도는 미래 확률이 아니며, 수수료·세금·중간 변동성에 따라 결과는 달라집니다.</small>
+</section>
+<section id="stochFocus" class="detail stochFocus" aria-label="일봉과 주봉 스토캐스틱 현재 상태">
+<div class="detailsHeading"><h2>스토캐스틱 · 진입 시점 점검</h2><span id="stochAsOf" class="due">최신 조회</span></div>
+<p class="stochFocusIntro">일봉과 주봉을 함께 확인합니다. 단기 반등이 장기 상승을 뜻하지는 않습니다. 기간을 선택하면 각각의 활용 방법이 바뀝니다.</p>
+<div id="stochSlots" class="stochSlots"></div>
+<p id="stochFoot" class="stochFoot">스토캐스틱을 불러오는 중입니다.</p>
+</section>
+
 <section id="review" class="detail" hidden><div class="detailsHeading"><h2>당시 판단과 실제 결과</h2><span class="due" id="reviewFrom"></span></div><p id="reviewSummary" class="explain"></p>
 <div class="tableScroll"><table><thead><tr><th>보유 기간</th><th>당시 판단</th><th>만기일</th><th>실제 수익률</th><th>판정</th></tr></thead><tbody id="reviewRows"></tbody></table></div><p class="micro" id="reviewFoot"></p></section>
 <section class="detail" role="tabpanel" tabindex="0" id="detail">
@@ -169,14 +232,14 @@ header{background:rgba(255,255,255,.97)}
 <section class="detail context"><div class="detailsHeading"><h2>시장 공통 지표 · 기간별 해석</h2><span class="due" id="contextDate"></span></div>
 <p class="explain">이 영역의 원자료는 선택한 기준일의 시장 상태입니다. 기간을 누르면 각 지표의 <b>활용 관점</b>만 달라집니다. 퀀트 점수, 일봉·주봉 신호 자체를 기간별 미래 예측값으로 바꾸지는 않습니다.</p><div class="contextGrid" id="contextMetrics"></div>
 <div class="contextSource">출처 · Binance Spot, <a href="https://alternative.me/crypto/fear-and-greed-index/" rel="noopener" target="_blank">Alternative.me</a>, DefiLlama, mempool.space</div>
-<details id="legacy" class="cases" open><summary>시장 공통 신호 보기 <span class="subtle">· IC 퀀트·모멘텀 원값</span></summary>
+<details id="legacy" class="cases"><summary>시장 공통 신호 보기 <span class="subtle">· IC 퀀트·모멘텀 원값</span></summary>
 <p class="micro signalIntro">아래 값은 현재 시장을 관찰한 공통 값입니다. 예를 들어 IC 퀀트 점수는 3개월 후나 2년 후 수익률이 아닙니다. 기간별 판단은 바로 위의 보조 판단에서 확인하세요.</p>
 <div class="signalLegend"><span class="lensChip lensChipUp">상승 우호</span><span class="lensChip lensChipDown">비우호</span><span class="lensChip lensChipMix">중립</span><span>각 카드의 숫자와 근거는 계산 결과에 따라 갱신됩니다.</span></div>
 <div id="signalStatus" class="signalStatus" role="status" aria-live="polite">현재 시장 지표를 불러오는 중…</div>
 <div class="lensGrid" id="lensGrid">
 <article class="lensCard"><div class="lensTop"><span class="lensCategory">종합 관점 · 가중 판단</span><span class="lensChip lensChipIdle" id="lens-quant-badge">계산 중</span></div><h3>퀀트 종합</h3><strong id="lens-quant-value">–</strong><p id="lens-quant-reason">예측력(IC)이 높은 지표에 더 무게를 둔 시장 신호</p><small>참고: 예측력 가중 신호이며, 보유 기간별 상승 확률과는 별개입니다.</small><span class="horizonLensNote" id="lens-quant-horizon"></span></article>
-<article class="lensCard"><div class="lensTop"><span class="lensCategory">단기 관점 · 일봉</span><span class="lensChip lensChipIdle" id="lens-stochS-badge">계산 중</span></div><h3>단기 모멘텀</h3><strong id="lens-stochS-value">–</strong><p id="lens-stochS-reason">일봉 스토캐스틱으로 단기 반등과 과열 여부를 확인합니다.</p><small>참고: 반등 신호는 중기 상승 추세를 보장하지 않습니다.</small><span class="horizonLensNote" id="lens-stochS-horizon"></span></article>
-<article class="lensCard"><div class="lensTop"><span class="lensCategory">중기 관점 · 주봉</span><span class="lensChip lensChipIdle" id="lens-stochM-badge">계산 중</span></div><h3>중기 모멘텀</h3><strong id="lens-stochM-value">–</strong><p id="lens-stochM-reason">주봉 스토캐스틱으로 수주~수개월의 추세 방향을 봅니다.</p><small>참고: 단기 반등이 있더라도 주봉 흐름은 약할 수 있습니다.</small><span class="horizonLensNote" id="lens-stochM-horizon"></span></article>
+<article class="lensCard"><div class="lensTop"><span class="lensCategory">단기 관점 · 일봉</span><span class="lensChip lensChipIdle" id="lens-stochS-badge">계산 중</span></div><h3>일봉 스토캐스틱</h3><strong id="lens-stochS-value">–</strong><p id="lens-stochS-reason">일봉 스토캐스틱으로 단기 반등과 과열 여부를 확인합니다.</p><small>참고: 반등 신호는 중기 상승 추세를 보장하지 않습니다.</small><span class="horizonLensNote" id="lens-stochS-horizon"></span></article>
+<article class="lensCard"><div class="lensTop"><span class="lensCategory">중기 관점 · 주봉</span><span class="lensChip lensChipIdle" id="lens-stochM-badge">계산 중</span></div><h3>주봉 스토캐스틱</h3><strong id="lens-stochM-value">–</strong><p id="lens-stochM-reason">주봉 스토캐스틱으로 수주~수개월의 추세 방향을 봅니다.</p><small>참고: 단기 반등이 있더라도 주봉 흐름은 약할 수 있습니다.</small><span class="horizonLensNote" id="lens-stochM-horizon"></span></article>
 <article class="lensCard"><div class="lensTop"><span class="lensCategory">패턴 관점 · 과거 유사 사례</span><span class="lensChip lensChipIdle" id="lens-pattern-badge">계산 중</span></div><h3>과거 유사 차트</h3><strong id="lens-pattern-value">–</strong><p id="lens-pattern-reason">최근 가격 흐름과 닮은 과거 구간의 이후 성과를 비교합니다.</p><small>참고: 유사 사례의 성과는 미래 수익을 보장하지 않습니다.</small><span class="horizonLensNote" id="lens-pattern-horizon"></span></article>
 </div>
 <div class="evidenceHeader"><h3>추가 지표 보기</h3><p>수급·거시경제·파생상품·심리로 구분해 핵심 수치를 표시합니다.</p></div>
@@ -185,14 +248,14 @@ header{background:rgba(255,255,255,.97)}
 <details class="evidenceItem"><summary>거시경제 · 금리 환경 <span id="count-macro">확인 중</span></summary><div class="evidenceContent" id="items-macro"></div></details>
 <details class="evidenceItem"><summary>파생상품 · 레버리지 위험 <span id="count-deriv">확인 중</span></summary><div class="evidenceContent" id="items-deriv"></div></details>
 <details class="evidenceItem"><summary>심리·추세 · 과열과 방향 <span id="count-mood">확인 중</span></summary><div class="evidenceContent" id="items-mood"></div></details>
-</div><div id="legacyMount" class="signalEngine" aria-hidden="true"></div></details>
+</div></details><div id="legacyMount" class="signalEngine" aria-hidden="true"></div>
 <p id="pastContext" class="micro" hidden>선택일의 이력을 확인할 수 있는 지표만 표시합니다. ETF·FOMC·뉴스 등 현재 자료는 ‘최신’에서 확인할 수 있습니다.</p></section>
 <div class="bottom"><details><summary>데이터와 판단 기준</summary><div class="method">
 <p><b>비교 기준.</b> 바이낸스 BTC/USDT의 선택일 확정 UTC 일봉을 사용합니다. 1년 전은 최신 확정 일봉과 같은 날짜에서 12개월을 뺀 날입니다. 업비트 원화 시세는 국내 가격 참고용입니다. 화면의 현물가는 조회 시세이며 전망의 매수가에는 확정 종가를 씁니다. 원화 환율과 국내 거래소 가격 차이, 수수료는 반영하지 않습니다.</p>
 <p><b>유사 국면.</b> 과거 매월 기준일과 같은 날짜를 하나씩 고릅니다. 해당 일이 없는 달은 말일을 씁니다. 그날의 종가가 200일 평균 위·아래인지, 90일 수익률이 양수·음수·0인지가 기준일과 같은 경우만 비교합니다. 당시에도 관측 가능했던 값만 사용합니다.</p>
 <p><b>방향 판정.</b> 보유 기간이 끝난 사례 중 65% 이상에서 올랐고 수익률 중앙값이 양수면 ‘상승 우세’, 65% 이상에서 내렸고 중앙값이 음수면 ‘하락 우세’입니다. 나머지는 ‘방향 혼재’입니다. 전체 구간은 동일한 날짜·기간 조건에서 시장 흐름과 관계없이 집계한 값입니다.</p>
 <p><b>판단 유보.</b> 유사 사례가 5개 미만이거나, 기간이 겹치지 않게 고를 수 있는 사례가 3개 미만이면 판정을 유보합니다. 장기 보유 사례는 같은 상승장이나 하락장을 여러 번 포함할 수 있습니다. 65%와 최소 사례 수는 이 화면에서 정한 참고 기준입니다.</p>
-<p><b>기간별 보조 판단.</b> 상승 비율·중앙값·최대 손실·비중첩 사례 수는 선택한 보유 기간의 과거 유사 사례를 다시 집계한 값입니다. 이에 반해 기존 퀀트(IC 가중), 일봉·주봉 모멘텀, 14일 패턴은 서로 다른 관찰 기간을 사용하는 현재 시장 공통 신호입니다. 과거 날짜를 선택하면 당시 사용 가능한 데이터만으로 기간별 판단을 재현하고 실시간 보조 지표는 숨깁니다.</p>
+<p><b>대응 의견.</b> 신규 매수·기존 보유 상황별 행동 참고안은 선택 기간의 과거 상승 비율, 수익률 중앙값, 표본 겹침, 최대 하락 및 당시 가격 추세를 우선합니다. 현재 날짜에 한하여 기존 스토캐스틱·퀀트 공통 신호를 진입 시점 점검에 참고합니다. 신호가 모순되거나 표본이 부족할 때는 보수적인 방향으로 표시합니다. 수익과 손실을 예측하거나 개인별 최적 매수액을 산출하는 기능은 아닙니다.</p><p><b>기간별 보조 판단.</b> 상승 비율·중앙값·최대 손실·비중첩 사례 수는 선택한 보유 기간의 과거 유사 사례를 다시 집계한 값입니다. 이에 반해 기존 퀀트(IC 가중), 일봉·주봉 모멘텀, 14일 패턴은 서로 다른 관찰 기간을 사용하는 현재 시장 공통 신호입니다. 과거 날짜를 선택하면 당시 사용 가능한 데이터만으로 기간별 판단을 재현하고 실시간 보조 지표는 숨깁니다.</p>
 <p><b>손실 해석.</b> ‘보유 중 가장 큰 손실’은 유사 사례 전체에서 매수 종가 대비 가장 낮았던 일봉 종가 수익률입니다. 장중에는 더 크게 하락할 수 있습니다. 표시한 비율은 과거 빈도이며 미래의 상승 확률이나 손실 한도를 뜻하지 않습니다.</p>
 <p><b>과거 검증.</b> 선택일까지 만기가 끝난 과거 사례로 당시 전망을 재현합니다. 그 이후 가격은 실제 결과를 채점할 때만 사용합니다. 적중은 상승·하락 방향이 일치한 경우입니다. 혼재·유보는 적중률에서 제외합니다.</p><p id="historyInfo"></p><p><a href="https://github.com/binance/binance-spot-api-docs/blob/master/faqs/market_data_only.md" target="_blank" rel="noopener">바이낸스 시세 데이터 안내</a> · <a href="https://api.upbit.com/v1/ticker?markets=KRW-BTC" target="_blank" rel="noopener">업비트 원화 시세</a></p></div></details>
 </div>
@@ -384,6 +447,7 @@ function showDetail() {
   get('worstDates').textContent=h.worst?(h.worst.loss<0?dotDate(h.worst.date)+' 매수 → '+dotDate(h.worst.lowDate)+' 종가':'모든 사례의 종가가 매수가 이상'):'비교 사례 없음';
   showCases(h);
   renderPeriodEvidence();
+  renderActionGuide();
   const r=model.reference;
   const condition=(r.vsMean>0?'200일선 위':r.vsMean<0?'200일선 아래':'200일선 일치')+' · 90일 수익률 '+(r.momentum>0?'양수':r.momentum<0?'음수':'0');
   get('sampleNote').innerHTML='<span>비교 조건 <b>'+condition+'</b></span><span>유사 '+h.count+'개 중 <b>겹치지 않는 사례 '+h.nonOverlapping+'개</b></span><span>전체 비교 '+h.allCount+'개</span>';
@@ -415,6 +479,85 @@ function renderPeriodEvidence() {
   viewNote('stochM',h.months<=3?'주봉 신호는 '+title+' 내 추세 점검에 참고할 수 있지만 단독 예측력은 검증되지 않았습니다.':h.months<=12?'주봉 신호는 수개월 추세를 점검하는 참고값입니다. '+title+' 보유 중 반복해서 관찰해야 합니다.':'현재 주봉 신호는 '+title+' 동안 유지된다는 보장이 없습니다. 장기 통계와 분리해 보세요.');
   viewNote('pattern','기존 14일 후 패턴은 '+title+' 보유와 예측 기간이 달라 직접 대체할 수 없습니다. '+upLine);
 }
+
+// V5: behavioral recommendations are conditional on selected horizon, price regime,
+// and live common-market signals. Never disguise IC/SMI as a horizon-specific forecast.
+let actionMode='new', latestSignals=null, latestSignalUpdated=0;
+function namedSignal(id){
+  const x=(!isPast()&&latestSignals&&latestSignals[id])||null;
+  if(!x||!['pos','neg','neu'].includes(x.sig))return null;
+  return x;
+}
+function shortSignal(x){return x?.sig==='pos'?'상승 우호':x?.sig==='neg'?'비우호':x?.sig==='neu'?'중립':'확인 중'}
+function renderActionGuide(){
+  const h=model.horizons.find(r=>r.months===selected);
+  if(!h)return;
+  const ttl=horizonName(h.months),q=namedSignal('quant'),d=namedSignal('stochS'),w=namedSignal('stochM');
+  const trend=regimeLabel(model.reference);
+  const up=h.signal==='up',down=h.signal==='down',limited=h.signal==='limited',mixed=h.signal==='mixed';
+  const weak=(h.nonOverlapping<5),newbuy=actionMode==='new',long=h.months>=24;
+  const caution=(!isPast()&&(q?.sig==='neg'||(d?.sig==='neg'&&w?.sig==='neg')));
+  const splitSignals=(!isPast()&&d&&w&&d.sig!==w.sig);
+  const risk=h.worst&&h.worst.loss<0?$pct(h.worst.loss):'사례 부족';
+  let status='조건 확인',statusClass='wait',lead='',now='',check='';
+  if(limited){
+    status='관망 우선';statusClass='wait';
+    lead=ttl+' 전망을 뒷받침하는 독립적인 과거 사례가 부족합니다. 강한 매수·매도 의견을 내기 어렵습니다.';
+    now=newbuy?'신규 매수 규모를 크게 늘리기보다 판단 근거가 쌓일 때까지 관찰을 우선 고려하세요.':'보유 이유와 투자 기간을 다시 확인하고, 표본 부족만으로 즉시 매도 결정을 내리지는 마세요.';
+    check='겹치지 않는 비교 사례가 3건 이상인지, 가격 추세와 일봉·주봉 신호가 개선되는지 확인하세요.';
+  }else if(down){
+    status='위험 우선';statusClass='care';
+    lead=ttl+'의 유사 과거 구간에서 하락이 우세했습니다. 지금 적극적으로 위험을 늘릴 근거는 약합니다.';
+    now=newbuy?'신규 대규모 진입은 보류하고 반등·추세 회복을 확인하는 접근을 검토하세요.':'보유 비중이 손실 허용 범위를 넘는다면 일부 축소 또는 방어 계획을 검토하세요.';
+    check='만기 수익률 중앙값과 상승 비율이 회복되는지, 주봉과 일봉 스토캐스틱이 개선되는지 확인하세요.';
+  }else if(mixed){
+    status='서두르지 않기';statusClass='wait';
+    lead=ttl+'에서는 상승과 하락이 뚜렷하게 갈리지 않았습니다. 단기 반등 신호만으로 추격 진입할 때는 특히 주의가 필요합니다.';
+    now=newbuy?'일시 매수보다 관망 또는 감당 가능한 소액의 분할 접근을 고려하세요.':'계획한 보유 기간과 현금 필요 시점을 점검하고, 막연한 기대만으로 추가 매수하지 마세요.';
+    check='동일 기간 상승 비율과 중앙값이 함께 개선되는지, 일봉·주봉의 방향이 일치하는지 보세요.';
+  }else if(up){
+    status=caution?'분할·확인 접근':'조건부 접근';statusClass=caution?'wait':'plan';
+    lead=ttl+' 과거 사례는 상승 우세지만 '+(weak?'기간이 겹치지 않는 사례가 '+h.nonOverlapping+'건이라 통계적 확신은 제한적입니다.':'앞으로의 상승을 보장하지는 않습니다.');
+    now=newbuy?(long?'장기 보유가 가능하고 큰 하락을 감당할 수 있을 때만, 한 번에 사기보다 단계적 매수를 검토하세요.':'진입을 서두르지 말고 추세가 확인될 때 소액 분할 접근을 검토하세요.'):
+      '장기 보유 가능 자금인지 확인하고, 손실 한도 안에서 비중을 관리하세요. 상승 우세만 믿고 무리한 추가 매수는 피하세요.';
+    check='매수 시점은 일봉과 주봉 스토캐스틱, 가격 추세를 함께 점검하세요. '+(caution?'현재 단기·종합 신호 중 약세가 있으므로 추격 진입보다 확인이 중요합니다.':'신호가 엇갈리면 속도를 낮추는 편이 합리적입니다.');
+  }
+  if(caution&&newbuy&&!limited&&!down){
+    now+=' 시장 공통 약세 신호가 있어 특히 일괄 매수는 신중하게 접근하세요.';
+  }
+  if(splitSignals&&!limited){
+    check+=' 현재 일봉('+shortSignal(d)+')과 주봉('+shortSignal(w)+')이 달라 방향 확인이 중요합니다.';
+  }
+  const sample='유사 '+h.count+'건 중 상승 '+h.up+'건 · 비중첩 '+h.nonOverlapping+'건 · 만기 수익률 중앙값 '+$pct(h.middle);
+  const indicator=isPast()?'과거 스토캐스틱 원값은 재현하지 않음':
+    '일봉 '+shortSignal(d)+' / 주봉 '+shortSignal(w)+' / IC 퀀트 '+shortSignal(q);
+  get('actionTitle').textContent=isPast()?'당시 어떻게 대응했을까?':'지금 어떻게 대응할까?';
+  const badge=get('actionStatus');badge.textContent=status;badge.className='actionStatus '+statusClass;
+  get('actionLead').textContent=lead;
+  get('actionNow').textContent=now;
+  get('actionCheck').textContent=check;
+  get('actionRisk').textContent='유사 과거 사례의 보유 중 최저 종가 수익률은 '+risk+'입니다. 큰 손실을 감당하기 어렵거나 생활 자금이라면 비중을 낮추거나 진입을 미루세요.';
+  get('actionBasis').textContent='판단 기준: '+ttl+' · '+labels[h.signal]+' · 기준일 가격 추세 '+trend+' · '+sample+' · '+indicator+'. '+(isPast()?'당시까지 알려진 종가만 사용한 가상 대응 의견입니다.':'스토캐스틱·퀀트는 현재 시점의 공통 신호입니다.');
+}
+function renderStochState(){
+  const d=namedSignal('stochS'),w=namedSignal('stochM');
+  get('stochAsOf').textContent=isPast()?'과거 기준일 · 미제공':latestSignalUpdated?new Date(latestSignalUpdated).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})+' 수신':'최신 조회 중';
+  get('stochFoot').textContent=isPast()?
+    '과거 날짜에서는 당시 OHLC로 검증한 스토캐스틱을 보유하지 않아 현재 신호를 대신 표시하지 않습니다. 기간별 과거 종가 통계만 사용합니다.':
+    (!d||!w)?'일봉·주봉 스토캐스틱 데이터를 조회 중이거나 일부 제공처 연결이 지연되고 있습니다. 수신되지 않은 신호는 매매 근거로 사용하지 않습니다.':
+    '일봉 '+shortSignal(d)+' / 주봉 '+shortSignal(w)+' · '+(d.sig!==w.sig?'서로 다른 신호이므로 단기 반등과 중기 추세를 구분하세요.':'두 신호가 같아도 미래 가격은 보장되지 않습니다.')+' · 원자료: 기존 SMI 스토캐스틱 계산 엔진';
+}
+function clearLiveSignalsForHistory(){
+  latestSignals=null;latestSignalUpdated=0;
+  for(const id of ['quant','stochS','stochM','pattern']){
+    const b=get('lens-'+id+'-badge'),v=get('lens-'+id+'-value'),w=get('lens-'+id+'-reason');
+    b.className='lensChip lensChipIdle';b.textContent='과거 자료 없음';
+    v.textContent='—';w.textContent='당시 원자료를 별도 검증하지 않아 현재 지표를 대입하지 않습니다.';
+  }
+  get('signalStatus').textContent='과거 날짜에서는 시장 공통 신호를 숨깁니다.';
+  renderStochState();renderActionGuide();
+}
+
 function selectPeriod(months,focus=false) {
   manualPeriod=true;selected=months;
   for(const button of get('cards').children) {
@@ -533,7 +676,7 @@ function render() {
     get(id).textContent=$pct(v);get(id).className=trendClass(v);
   }
   get('historyInfo').textContent='종가 이력 '+dotDate(series.start)+' ~ '+dotDate(lastDay(series))+' · '+series.closes.length.toLocaleString('ko-KR')+'일. 현물 시세는 실시간 수신하며, 연결이 지연되면 15초마다 다시 조회합니다. 닫아 둔 기간의 확정 일봉은 다음 접속 때 이어 받습니다.';
-  renderQuote();renderHolding();drawCards();showDetail();renderReview();contextMetrics();drawChart();
+  renderQuote();renderHolding();drawCards();showDetail();renderReview();contextMetrics();renderStochState();drawChart();
 }
 function rebuild(resetSelection) {
   view=asOfSeries(series,fixedDate??lastDay(series));model=analyze(view);
@@ -548,6 +691,7 @@ function chooseDate(date) {
   }
   fixedDate=date===lastDay(series)?null:date;
   if(isPast()&&get('legacy').open)get('legacy').open=false;
+  syncSignalEngine();
   rebuild(false);showStatus();
 }
 get('asOf').addEventListener('change',()=>chooseDate(get('asOf').valueAsNumber));
@@ -711,6 +855,7 @@ const signalNames={halving:'반감기',hash:'해시레이트',stable:'스테이�
 const signalBadge={pos:['상승 우호','lensChipUp'],neg:['비우호','lensChipDown'],neu:['중립','lensChipMix'],na:['자료 없음','lensChipIdle']};
 const safeText=v=>String(v==null?'':v).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 function updateSignalView(signals,updated){
+  latestSignals=signals;latestSignalUpdated=updated;
   const keys=['quant','stochS','stochM','pattern'];
   for(const id of keys){
     const data=signals[id];
@@ -731,20 +876,42 @@ function updateSignalView(signals,updated){
   }
   const count=Object.values(signals).filter(s=>s.sig&&s.sig!=='na').length;
   get('signalStatus').textContent=count+'개 지표 수집 · 마지막 수신 '+new Date(updated).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})+' · 지표별 갱신 주기 상이';
+  renderStochState();renderActionGuide();
 }
-get('legacy').addEventListener('toggle',()=>{
+function syncSignalEngine(){
   const mount=get('legacyMount');
-  if(!get('legacy').open||isPast()){mount.replaceChildren();return;}
+  if(isPast()){
+    mount.replaceChildren();
+    clearLiveSignalsForHistory();
+    return;
+  }
   if(mount.firstChild)return;
+  latestSignals=null;latestSignalUpdated=0;
+  for(const id of ['quant','stochS','stochM','pattern']){
+    get('lens-'+id+'-badge').className='lensChip lensChipIdle';
+    get('lens-'+id+'-badge').textContent='조회 중';
+    get('lens-'+id+'-value').textContent='–';
+    get('lens-'+id+'-reason').textContent='현재 시장 원자료를 새로 확인하고 있습니다.';
+  }
+  renderStochState();renderActionGuide();
   const prefs={};
   for(const key of legacyKeys){try{const v=localStorage.getItem(key);if(v!==null)prefs[key]=v;}catch{}}
   const frame=document.createElement('iframe');
   frame.className='legacyFrame';frame.title='기존 지표 계산 엔진';frame.tabIndex=-1;
   frame.setAttribute('sandbox','allow-scripts allow-forms allow-downloads');
   const html=new TextDecoder().decode(Uint8Array.from(atob(get('original').textContent.trim()),c=>c.charCodeAt(0)));
-  frame.srcdoc=html.replace('__SETTINGS__',()=>JSON.stringify(prefs).replaceAll('<','\\u003c'));
+  frame.srcdoc=html.replace('__SETTINGS__',()=>JSON.stringify(prefs).replaceAll('<','\u003c'));
   mount.append(frame);
-});
+}
+get('actionGuide').querySelectorAll('[data-action-mode]').forEach(button=>button.addEventListener('click',()=>{
+  actionMode=button.dataset.actionMode;
+  get('actionGuide').querySelectorAll('[data-action-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));
+  renderActionGuide();
+}));
+for(const id of ['stochS','stochM']){
+  const card=get('lens-'+id+'-value').closest('.lensCard');
+  get('stochSlots').append(card);
+}
 window.addEventListener('message',evt=>{
   const frame=get('legacyMount').querySelector('iframe'),d=evt.data;
   if(!frame||evt.source!==frame.contentWindow||!d)return;
@@ -755,8 +922,8 @@ window.addEventListener('message',evt=>{
     updateSignalView(d.data,d.updated);
   }
 });
-// An initially open details element does not reliably fire toggle on every browser.
-if(get('legacy').open)get('legacy').dispatchEvent(new Event('toggle'));
+// The calculation engine is independent of collapsible details so stochastic stays visible.
+syncSignalEngine();
 get('showPhone').addEventListener('click',()=>get('phoneDialog').showModal());
 get('closePhone').addEventListener('click',()=>get('phoneDialog').close());
 get('refresh').addEventListener('click',()=>refresh(true));
